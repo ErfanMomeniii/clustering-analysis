@@ -1,8 +1,8 @@
-# Phase 1 pipeline stages — populated incrementally by Tasks 6–13.
+# Phase 1 pipeline stages — populated incrementally as each stage is implemented.
 # Each stage:
 #   - has named deps (code + input data)
 #   - has named outs (intermediate or final artefacts)
 #   - reads params from params.yaml
 #
-# After every task that adds a stage, run: dvc repro <stage_name>
+# After adding a stage, run: dvc repro <stage_name>
 stages: {}

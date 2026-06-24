@@ -10,7 +10,7 @@ ingest:
   source: "kaggle://mlg-ulb/creditcardfraud/creditcard.csv"
   expected_rows: 284807
   expected_columns: 31
-  checksum_sha256: ""  # Filled in by Task 6 after first download
+  checksum_sha256: "76274b691b16a6c49d3f159c883398e03ccd6d1ee12d9d8ee38f4b4b98551a89"
 
 clean:
   drop_duplicates: true

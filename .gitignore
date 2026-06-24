@@ -231,3 +231,6 @@ docs/superpowers/
 *.pdf
 !reports/**/*.pdf
 
+# --- DVC-tracked data (raw, interim, processed); not in git ---
+data/
+
