@@ -1,0 +1,26 @@
+\documentclass[11pt, a4paper]{article}
+\usepackage[margin=2cm]{geometry}
+\usepackage{booktabs}
+\usepackage{parskip}
+\usepackage{hyperref}
+\title{\textbf{Analysis Plan — Clustering Analysis on DS-10 (Credit Card Fraud)}}
+\author{Advanced Data Mining, Spring 1404--1405 — Solo project}
+\date{\today}
+\begin{document}
+\maketitle
+
+\textbf{Dataset.} DS-10 — UCI/Kaggle Credit Card Fraud, 284{,}807 transactions $\times$ 31 columns (V1--V28 PCA components, \texttt{Time}, \texttt{Amount}, binary \texttt{Class}); 492 fraudulent. $\sim$150~MB.
+
+\textbf{Central clustering research question.} \emph{Do credit-card transactions form density-distinct subpopulations that separate fraudulent from legitimate behaviour, and can those subpopulations be recovered without using the label?}
+
+\textbf{Expected cluster types.} Density-varying / non-convex micro-clusters representing fraud; convex / elliptical macro-clusters representing the bulk of legitimate behaviour; possibly boundary points. The Phase~2 portfolio therefore covers both regimes.
+
+\textbf{Phase 1 plan.} Reproducible ingest (SHA-256, pandera schema) $\rightarrow$ cleaning with decision log (drop exact duplicates) $\rightarrow$ feature engineering (\texttt{log1p(Amount)} + cyclic \texttt{Time}) $\rightarrow$ 3-strategy scaling comparison with a hybrid \texttt{ColumnTransformer} chosen $\rightarrow$ PCA at 95\% cumulative variance and UMAP (2D viz, 10D downstream) $\rightarrow$ distance-metric selection (Euclidean headline; Mahalanobis and cosine ablations deferred to Phase~2) $\rightarrow$ Hopkins~$H$ and VAT clustering-tendency assessment $\rightarrow$ EDA report.
+
+\textbf{Phase 2 plan.} One algorithm per family: K-Means (partitioning), Ward agglomerative (hierarchical), HDBSCAN (density), GMM with full / diagonal / spherical covariance (model). Determining $k$ via elbow + silhouette + gap statistic + BIC + bootstrap stability. Internal metrics: silhouette, Davies--Bouldin, Calinski--Harabasz, Dunn. External metrics: ARI, NMI, AMI, V-measure, purity (\texttt{Class} as ground truth). Stability via 20 seeds + bootstrap; consensus via co-association matrix.
+
+\textbf{Phase 3 track.} \emph{Track 1 --- Deep Clustering.} Autoencoder + K-Means baseline $\rightarrow$ DEC $\rightarrow$ custom DEC + InfoNCE contrastive auxiliary (bonus +5). Interpretation via decision-tree rule extraction, SHAP, and counterfactuals (DiCE; bonus +4). Significance via bootstrap CIs + permutation tests (bonus +3). Streamlit dashboard. IEEE LaTeX final report (bonus +2). Non-expert insight brief (bonus +3). Nominal bonus total +17, capped at +15.
+
+\textbf{Reproducibility.} All seeds in \texttt{params.yaml}; DVC + Make orchestration; pandera schemas at every stage boundary; deterministic on re-run; \texttt{make verify} smoke test in $<$5~min.
+
+\end{document}

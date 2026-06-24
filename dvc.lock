@@ -1,0 +1,28 @@
+schema: '2.0'
+stages:
+  ingest:
+    cmd: python -c "from pathlib import Path; from clustering_analysis.ingest 
+      import ingest_csv; ingest_csv(Path('data/raw/creditcard.csv'), 
+      source='kaggle://mlg-ulb/creditcardfraud')"
+    deps:
+    - path: data/raw/creditcard.csv
+      hash: md5
+      md5: e90efcb83d69faf99fcab8b0255024de
+      size: 150828752
+    - path: src/clustering_analysis/ingest.py
+      hash: md5
+      md5: 0775603d34c5984e0341eacdfeb15d53
+      size: 1765
+    - path: src/clustering_analysis/schemas.py
+      hash: md5
+      md5: 4b24f5d2fbf66b6cc853526886a50dc9
+      size: 1166
+    outs:
+    - path: data/raw/creditcard.parquet
+      hash: md5
+      md5: 4535b75b5f542649c5e7242ee25d7f16
+      size: 72483046
+    - path: data/raw/manifest.json
+      hash: md5
+      md5: 2d896941bc9274313f8eb70617b409ae
+      size: 321

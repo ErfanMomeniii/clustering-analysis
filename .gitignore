@@ -234,3 +234,11 @@ docs/superpowers/
 # --- DVC-tracked data (raw, interim, processed); not in git ---
 data/
 
+# --- LaTeX build artifacts ---
+reports/*.aux
+reports/*.log
+reports/*.out
+reports/*.toc
+reports/*.bbl
+reports/*.blg
+
