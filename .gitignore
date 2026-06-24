@@ -187,6 +187,7 @@ cython_debug/
 #   and can be added to the global gitignore or merged into this file.  For a more nuclear
 #   option (not recommended) you can uncomment the following to ignore the entire idea folder.
 # .idea/
+.idea/
 
 # Abstra
 #   Abstra is an AI-powered process automation framework.
@@ -216,3 +217,17 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Private / not for public repo
+# --- AI assistant working artefacts (specs, plans, transcripts, scratchpads) ---
+# Disclosure of AI usage lives in reports/ai_usage.md; the raw AI work products stay private.
+.claude/
+.cursor/
+.aider*
+CLAUDE.md
+docs/superpowers/
+
+# --- Course project brief (instructor copyright; do not redistribute) ---
+*.pdf
+!reports/**/*.pdf
+

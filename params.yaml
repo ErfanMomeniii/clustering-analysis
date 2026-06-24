@@ -1,0 +1,43 @@
+seeds:
+  global: 42
+  ingest: 42
+  scaling: 42
+  reduce: 42
+  tendency: 42
+  algorithms: 42
+
+ingest:
+  source: "kaggle://mlg-ulb/creditcardfraud/creditcard.csv"
+  expected_rows: 284807
+  expected_columns: 31
+  checksum_sha256: ""  # Filled in by Task 6 after first download
+
+clean:
+  drop_duplicates: true
+
+features:
+  amount_transform: log1p
+  time_period_seconds: 86400  # 24h cyclic encoding
+
+scaling:
+  strategy: hybrid  # one of: standard, robust, hybrid
+  v_features: ["V1","V2","V3","V4","V5","V6","V7","V8","V9","V10","V11","V12","V13","V14","V15","V16","V17","V18","V19","V20","V21","V22","V23","V24","V25","V26","V27","V28"]
+  robust_features: ["log_amount", "time_sin", "time_cos"]
+
+reduce:
+  pca_variance: 0.95
+  umap:
+    n_neighbors: 30
+    min_dist: 0.05
+    n_components_viz: 2
+    n_components_downstream: 10
+    metric: euclidean
+
+tendency:
+  hopkins:
+    sample_fraction: 0.1
+    n_repeats: 5
+    pass_threshold: 0.6
+  vat:
+    n_legitimate: 2000
+    n_fraud: 492
