@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 name = "clustering-analysis"
 version = "0.1.0"
 description = "DS-10 Credit Card Fraud clustering analysis — Advanced Data Mining final project (KNTU, Spring 1404-1405)"
-requires-python = ">=3.11,<3.13"
+requires-python = ">=3.11"
 readme = "README.md"
 license = {file = "LICENSE"}
 dependencies = [

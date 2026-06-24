@@ -1,10 +1,10 @@
 seeds:
   global: 42
   ingest: 42
-  scaling: 42
-  reduce: 42
-  tendency: 42
-  algorithms: 42
+  scaling: 43
+  reduce: 44
+  tendency: 45
+  algorithms: 46
 
 ingest:
   source: "kaggle://mlg-ulb/creditcardfraud/creditcard.csv"
