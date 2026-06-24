@@ -1,4 +1,4 @@
-.PHONY: test test-fast lint format clean
+.PHONY: test test-fast lint format clean ingest phase1 verify dashboard
 
 PY := python
 
@@ -19,3 +19,16 @@ clean:
 	find . -name __pycache__ -type d -exec rm -rf {} + 2>/dev/null || true
 	find . -name "*.pyc" -delete
 	rm -rf .pytest_cache .ruff_cache .coverage htmlcov
+
+ingest:
+	dvc repro -f -s ingest
+
+phase1:
+	dvc repro
+
+verify:
+	$(PY) -c "import clustering_analysis; print('package importable:', clustering_analysis.__version__)"
+	pytest tests/ -m "not slow" -q
+
+dashboard:
+	@echo "dashboard target enabled in Phase 3"
