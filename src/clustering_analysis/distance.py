@@ -1,13 +1,19 @@
 """Distance metric registry (brief §2.6)."""
+
 from __future__ import annotations
-from typing import Callable
+
+from collections.abc import Callable
+
 import numpy as np
+
 
 def _euclidean(a: np.ndarray, b: np.ndarray) -> float:
     return float(np.linalg.norm(a - b))
 
+
 def _manhattan(a: np.ndarray, b: np.ndarray) -> float:
     return float(np.abs(a - b).sum())
+
 
 def _cosine(a: np.ndarray, b: np.ndarray) -> float:
     na = float(np.linalg.norm(a))
@@ -16,12 +22,16 @@ def _cosine(a: np.ndarray, b: np.ndarray) -> float:
         return 1.0
     return 1.0 - float(np.dot(a, b) / (na * nb))
 
+
 def _mahalanobis_factory(VI: np.ndarray) -> Callable[[np.ndarray, np.ndarray], float]:
     """Return a Mahalanobis metric bound to inverse covariance VI."""
+
     def metric(a: np.ndarray, b: np.ndarray) -> float:
         diff = a - b
         return float(np.sqrt(diff @ VI @ diff))
+
     return metric
+
 
 _REGISTRY = {
     "euclidean": _euclidean,
@@ -31,6 +41,7 @@ _REGISTRY = {
 }
 
 AVAILABLE_METRICS = tuple(_REGISTRY.keys())
+
 
 def get_metric(name: str, *, VI: np.ndarray | None = None):
     if name == "mahalanobis":

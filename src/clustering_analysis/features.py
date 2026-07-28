@@ -1,10 +1,13 @@
 """Feature engineering for DS-10: log_amount + cyclic time."""
+
 from __future__ import annotations
+
 import numpy as np
 import pandas as pd
 from sklearn.base import BaseEstimator, TransformerMixin
 
 V_COLS = [f"V{i}" for i in range(1, 29)]
+
 
 def engineer_features(df: pd.DataFrame, *, period_seconds: int) -> pd.DataFrame:
     out = pd.DataFrame(index=df.index)
@@ -15,6 +18,7 @@ def engineer_features(df: pd.DataFrame, *, period_seconds: int) -> pd.DataFrame:
     out["time_sin"] = np.sin(omega * df["Time"].astype(float))
     out["time_cos"] = np.cos(omega * df["Time"].astype(float))
     return out
+
 
 class FeatureEngineer(BaseEstimator, TransformerMixin):
     """Sklearn-compatible wrapper for engineer_features."""

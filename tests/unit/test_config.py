@@ -1,5 +1,6 @@
 from clustering_analysis.config import load_params
 
+
 def test_load_params_returns_typed_settings(repo_root):
     params = load_params(repo_root / "params.yaml")
     assert params.seeds.global_ == 42

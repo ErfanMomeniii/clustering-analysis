@@ -41,3 +41,37 @@ tendency:
   vat:
     n_legitimate: 2000
     n_fraud: 492
+
+algorithms:
+  k_range: [2, 3, 4, 5, 6, 7, 8, 10, 12, 15]   # candidate k for partitioning / hierarchical / GMM
+  families:
+    kmeans:
+      n_init: 20
+    ward:
+      linkage: ward
+    gmm:
+      covariance_type: full   # one of: full, tied, diag, spherical
+    hdbscan:
+      min_cluster_size: 100
+      min_samples: 10
+      cluster_selection_method: eom
+
+k_selection:
+  silhouette:
+    sample_size: 5000          # subsample for silhouette to keep runtime feasible
+  gap:
+    n_refs: 10                 # reference datasets per k
+    seed_offset: 1000
+  bootstrap:
+    n_resamples: 20            # bootstrap stability resamples
+    sample_fraction: 0.8
+
+metrics:
+  internal: [silhouette, davies_bouldin, calinski_harabasz, dunn]
+  external: [ari, nmi, ami, v_measure, purity]
+
+stability:
+  n_seeds: 20
+  seed_offset: 7000
+  consensus:
+    co_occurrence_threshold: 0.5   # link probability for consensus graph

@@ -1,14 +1,19 @@
 """Source acquisition + checksum + manifest for DS-10 raw data."""
+
 from __future__ import annotations
+
 import hashlib
 import json
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
+
 import pandas as pd
-from .io_utils import raw_path, ensure_parents
+
+from .io_utils import ensure_parents, raw_path
 from .schemas import RawSchema
 
 CHUNK = 1 << 20  # 1 MiB
+
 
 def sha256_of_file(path: Path) -> str:
     h = hashlib.sha256()
@@ -17,6 +22,7 @@ def sha256_of_file(path: Path) -> str:
             h.update(chunk)
     return h.hexdigest()
 
+
 def build_manifest(path: Path, n_rows: int, source: str) -> dict:
     return {
         "path": str(path),
@@ -24,11 +30,13 @@ def build_manifest(path: Path, n_rows: int, source: str) -> dict:
         "row_count": n_rows,
         "sha256": sha256_of_file(path),
         "source": source,
-        "downloaded_at": datetime.now(timezone.utc).isoformat(),
+        "downloaded_at": datetime.now(UTC).isoformat(),
     }
+
 
 def validate_raw_frame(df: pd.DataFrame) -> None:
     RawSchema.validate(df)
+
 
 def ingest_csv(local_csv: Path, source: str = "local") -> tuple[Path, dict]:
     """Validate and stage a locally-present creditcard.csv into data/raw/.

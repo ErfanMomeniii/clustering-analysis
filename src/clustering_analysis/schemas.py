@@ -1,7 +1,8 @@
 """Pandera schemas for raw, interim, and processed feature frames."""
+
 from __future__ import annotations
-import pandera.pandas as pa
-from pandera.pandas import Column, DataFrameSchema, Check
+
+from pandera.pandas import Check, Column, DataFrameSchema
 
 _V_COLUMNS = {f"V{i}": Column(float, nullable=False) for i in range(1, 29)}
 

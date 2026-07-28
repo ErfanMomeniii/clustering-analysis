@@ -1,8 +1,13 @@
 """Cleaning step + decision log generator."""
+
 from __future__ import annotations
+
 from pathlib import Path
+
 import pandas as pd
+
 from .schemas import InterimSchema
+
 
 def clean_frame(df: pd.DataFrame, *, drop_duplicates: bool) -> tuple[pd.DataFrame, dict]:
     InterimSchema.validate(df)
@@ -22,6 +27,7 @@ def clean_frame(df: pd.DataFrame, *, drop_duplicates: bool) -> tuple[pd.DataFram
         "n_legitimate": n_legit,
     }
     return df, stats
+
 
 def generate_decision_log(stats: dict) -> str:
     return (
@@ -44,6 +50,7 @@ def generate_decision_log(stats: dict) -> str:
         "| duplicates | drop                                    | Inflate local density and bias DBSCAN MinPts logic (brief §2.2).                      |\n"
         "| missing    | none observed; assert                   | Fail fast if upstream changes (brief §2.2).                                            |\n"
     )
+
 
 def write_decision_log(stats: dict, path: Path) -> Path:
     path.parent.mkdir(parents=True, exist_ok=True)

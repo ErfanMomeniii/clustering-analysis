@@ -1,9 +1,12 @@
 """Scaling: hybrid ColumnTransformer (Strategy C) + comparison vs uniform Standard / Robust."""
+
 from __future__ import annotations
+
 import numpy as np
 import pandas as pd
 from sklearn.compose import ColumnTransformer
-from sklearn.preprocessing import StandardScaler, RobustScaler
+from sklearn.preprocessing import RobustScaler, StandardScaler
+
 
 def build_scaler(strategy: str, *, v_features: list[str], robust_features: list[str]):
     if strategy == "standard":
@@ -26,14 +29,20 @@ def build_scaler(strategy: str, *, v_features: list[str], robust_features: list[
         )
     raise ValueError(f"Unknown scaling strategy: {strategy!r}")
 
+
 def _summary_for(df_after: pd.DataFrame) -> dict:
     return {
-        "log_amount_iqr_after": float(np.subtract(*np.percentile(df_after["log_amount"], [75, 25]))),
+        "log_amount_iqr_after": float(
+            np.subtract(*np.percentile(df_after["log_amount"], [75, 25]))
+        ),
         "v1_mean_after": float(df_after["V1"].mean()),
         "v1_std_after": float(df_after["V1"].std()),
     }
 
-def fit_and_describe(df: pd.DataFrame, *, v_features: list[str], robust_features: list[str]) -> dict:
+
+def fit_and_describe(
+    df: pd.DataFrame, *, v_features: list[str], robust_features: list[str]
+) -> dict:
     cols = v_features + robust_features
     out = {}
     for strategy in ("standard", "robust", "hybrid"):

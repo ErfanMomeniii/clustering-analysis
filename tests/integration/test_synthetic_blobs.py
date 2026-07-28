@@ -6,6 +6,7 @@ ARI > 0.95 between K-Means assignments and the true blob labels. This
 proves the data layer + scaling + reduction stack is sound before we trust
 it on DS-10.
 """
+
 import numpy as np
 import pandas as pd
 import pytest
@@ -13,14 +14,15 @@ from sklearn.cluster import KMeans
 from sklearn.datasets import make_blobs
 from sklearn.metrics import adjusted_rand_score
 
-from clustering_analysis.scaling import build_scaler
 from clustering_analysis.reduce import fit_pca_for_variance
+from clustering_analysis.scaling import build_scaler
 from clustering_analysis.tendency import hopkins_statistic
 
 pytestmark = pytest.mark.slow
 
 V_COLS = [f"V{i}" for i in range(1, 29)]
 ROBUST_COLS = ["log_amount", "time_sin", "time_cos"]
+
 
 def _synthetic_processed_frame(n=600, seed=0):
     X, y = make_blobs(n_samples=n, centers=3, cluster_std=0.7, random_state=seed, n_features=28)
@@ -30,6 +32,7 @@ def _synthetic_processed_frame(n=600, seed=0):
     df["time_sin"] = rng.uniform(-1, 1, size=n)
     df["time_cos"] = rng.uniform(-1, 1, size=n)
     return df, y
+
 
 def test_pipeline_recovers_three_blobs():
     df, y = _synthetic_processed_frame()

@@ -1,8 +1,11 @@
 """Clustering tendency: Hopkins statistic + VAT ordering (brief §2.7)."""
+
 from __future__ import annotations
+
 import numpy as np
+from scipy.spatial.distance import pdist, squareform
 from sklearn.neighbors import NearestNeighbors
-from scipy.spatial.distance import squareform, pdist
+
 
 def hopkins_statistic(X: np.ndarray, *, sample_size: int, seed: int) -> float:
     rng = np.random.default_rng(seed)
@@ -20,6 +23,7 @@ def hopkins_statistic(X: np.ndarray, *, sample_size: int, seed: int) -> float:
     w_d = (w[:, 1] ** d).sum()
     u_d = (u[:, 0] ** d).sum()
     return float(u_d / (u_d + w_d))
+
 
 def vat_ordering(X: np.ndarray) -> list[int]:
     """Return a Prim's-MST traversal of indices that surfaces block structure."""
