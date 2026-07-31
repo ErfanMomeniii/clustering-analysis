@@ -25,6 +25,36 @@ def hopkins_statistic(X: np.ndarray, *, sample_size: int, seed: int) -> float:
     return float(u_d / (u_d + w_d))
 
 
+def hopkins_null_control(
+    X: np.ndarray, *, sample_size: int, seed: int, n_repeats: int = 3
+) -> dict:
+    """Hopkins H on structureless data of the same shape as ``X``.
+
+    On DS-10 the statistic saturates near 1.0, because the u_i^d term uses the
+    ambient dimensionality (d = 31 here) and the uniform reference is drawn from
+    a bounding box that outliers stretch wide. A near-1.0 value is therefore not
+    self-evidently meaningful: it could equally indicate a degenerate estimator.
+
+    This control settles the question. It draws uniform noise matching ``X``'s
+    shape and bounding box and reports H on it. A sound estimator must return
+    ~0.5 there. Reporting the control next to the headline H is what makes the
+    headline defensible.
+    """
+    rng = np.random.default_rng(seed)
+    mins, maxs = X.min(axis=0), X.max(axis=0)
+    values = []
+    for i in range(n_repeats):
+        noise = rng.uniform(mins, maxs, size=X.shape)
+        values.append(hopkins_statistic(noise, sample_size=sample_size, seed=seed + i))
+    return {
+        "null_h_mean": float(np.mean(values)),
+        "null_h_std": float(np.std(values)),
+        "null_h_values": [float(v) for v in values],
+        "n_repeats": n_repeats,
+        "shape": tuple(int(s) for s in X.shape),
+    }
+
+
 def vat_ordering(X: np.ndarray) -> list[int]:
     """Return a Prim's-MST traversal of indices that surfaces block structure."""
     D = squareform(pdist(X))

@@ -43,3 +43,34 @@ def test_vat_ordering_produces_diagonal_block_on_blobs():
     block_dist = float(D[:40, :40].mean())
     off_block_dist = float(D[:40, 80:].mean())
     assert block_dist < off_block_dist
+
+
+def test_hopkins_null_control_returns_half_on_structureless_data():
+    """The control is what makes a saturated H=1.0 headline defensible."""
+    from clustering_analysis.tendency import hopkins_null_control
+
+    rng = np.random.default_rng(0)
+    X = np.vstack([rng.normal(0, 0.1, (300, 6)), rng.normal(20, 0.1, (300, 6))])
+    control = hopkins_null_control(X, sample_size=60, seed=0, n_repeats=3)
+    assert 0.4 <= control["null_h_mean"] <= 0.6
+    assert control["n_repeats"] == 3
+    assert control["shape"] == (600, 6)
+
+
+def test_hopkins_control_is_far_below_the_clustered_value():
+    from clustering_analysis.tendency import hopkins_null_control, hopkins_statistic
+
+    rng = np.random.default_rng(0)
+    X = np.vstack([rng.normal(0, 0.05, (300, 6)), rng.normal(20, 0.05, (300, 6))])
+    clustered = hopkins_statistic(X, sample_size=60, seed=0)
+    control = hopkins_null_control(X, sample_size=60, seed=0, n_repeats=2)
+    assert clustered > control["null_h_mean"] + 0.3
+
+
+def test_hopkins_control_is_deterministic_for_a_fixed_seed():
+    from clustering_analysis.tendency import hopkins_null_control
+
+    X = np.random.default_rng(1).normal(size=(200, 4))
+    a = hopkins_null_control(X, sample_size=40, seed=7, n_repeats=2)
+    b = hopkins_null_control(X, sample_size=40, seed=7, n_repeats=2)
+    assert a["null_h_values"] == b["null_h_values"]
