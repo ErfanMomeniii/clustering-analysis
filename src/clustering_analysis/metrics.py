@@ -163,14 +163,25 @@ EXTERNAL_METRICS: dict[str, Callable[[np.ndarray, np.ndarray], float]] = {
 ALL_METRICS = {**INTERNAL_METRICS, **EXTERNAL_METRICS}
 
 
+_INTERNAL_KWARGS: dict[str, frozenset[str]] = {
+    "silhouette": frozenset({"sample_size", "seed"}),
+    "davies_bouldin": frozenset(),
+    "calinski_harabasz": frozenset(),
+    "dunn": frozenset({"diameter_cap", "seed"}),
+}
+
+
 def score_internal(name: str, X: np.ndarray, labels: np.ndarray, **kw) -> float:
+    """Dispatch to an internal metric, forwarding only the kwargs it accepts.
+
+    The evaluation loop passes one shared kwargs bag (``sample_size``, ``seed``,
+    ``diameter_cap``) across every metric, so each metric filters that bag
+    rather than silently dropping arguments it was actually given.
+    """
     if name not in INTERNAL_METRICS:
         raise KeyError(f"Unknown internal metric: {name!r}. Available: {list(INTERNAL_METRICS)}")
-    return (
-        INTERNAL_METRICS[name](X, labels, **kw)
-        if name == "silhouette"
-        else INTERNAL_METRICS[name](X, labels)
-    )
+    accepted = _INTERNAL_KWARGS[name]
+    return INTERNAL_METRICS[name](X, labels, **{k: v for k, v in kw.items() if k in accepted})
 
 
 def score_external(name: str, true: np.ndarray, pred: np.ndarray) -> float:

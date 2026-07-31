@@ -123,6 +123,26 @@ def test_purity_on_mixed_cluster():
     assert purity(true, pred) == pytest.approx(5 / 6)
 
 
+def test_score_internal_forwards_dunn_kwargs():
+    """A shared kwargs bag must reach dunn, not be silently dropped."""
+    X, _ = make_blobs(n_samples=400, centers=3, cluster_std=0.4, random_state=0, n_features=4)
+    labels = np.repeat([0, 1, 2, 0], 100)
+    # a cap of 3 truncates every cluster, so it must not equal the uncapped value
+    capped = dunn(X, labels, diameter_cap=3, seed=3)
+    uncapped = dunn(X, labels, diameter_cap=400, seed=3)
+    assert capped != pytest.approx(uncapped), "fixture too weak to detect a dropped kwarg"
+
+    routed = score_internal("dunn", X, labels, diameter_cap=3, seed=3)
+    assert routed == pytest.approx(capped)  # kwargs reached dunn
+    assert routed != pytest.approx(uncapped)  # and were not silently dropped
+
+
+def test_score_internal_ignores_kwargs_a_metric_cannot_accept():
+    X, y = make_blobs(n_samples=200, centers=3, cluster_std=0.4, random_state=0, n_features=4)
+    # davies_bouldin takes neither sample_size nor diameter_cap
+    assert score_internal("davies_bouldin", X, y, sample_size=50, diameter_cap=10) > 0
+
+
 def test_score_internal_unknown_raises():
     with pytest.raises(KeyError):
         score_internal("bogus", np.zeros((5, 2)), np.zeros(5, dtype=int))
