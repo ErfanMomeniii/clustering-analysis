@@ -1,9 +1,12 @@
 schema: '2.0'
 stages:
   ingest:
-    cmd: python -c "from pathlib import Path; from clustering_analysis.ingest 
-      import ingest_csv; ingest_csv(Path('data/raw/creditcard.csv'), 
-      source='kaggle://mlg-ulb/creditcardfraud')"
+    cmd: python -c " from pathlib import Path; from clustering_analysis.config 
+      import load_params; from clustering_analysis.ingest import ingest_csv; P =
+      load_params(); ingest_csv(Path('data/raw/creditcard.csv'), 
+      source=P.ingest.source, expected_rows=P.ingest.expected_rows, 
+      expected_columns=P.ingest.expected_columns, 
+      checksum_sha256=P.ingest.checksum_sha256)"
     deps:
     - path: data/raw/creditcard.csv
       hash: md5
@@ -11,12 +14,20 @@ stages:
       size: 150828752
     - path: src/clustering_analysis/ingest.py
       hash: md5
-      md5: 0775603d34c5984e0341eacdfeb15d53
-      size: 1765
+      md5: 6280dcc6ad130700068cd62aeb3bf516
+      size: 3468
     - path: src/clustering_analysis/schemas.py
       hash: md5
-      md5: 4b24f5d2fbf66b6cc853526886a50dc9
-      size: 1166
+      md5: fba7190231cc9d75e5db86f26f22c4d2
+      size: 1140
+    params:
+      params.yaml:
+        ingest:
+          source: kaggle://mlg-ulb/creditcardfraud/creditcard.csv
+          expected_rows: 284807
+          expected_columns: 31
+          checksum_sha256: 
+            76274b691b16a6c49d3f159c883398e03ccd6d1ee12d9d8ee38f4b4b98551a89
     outs:
     - path: data/raw/creditcard.parquet
       hash: md5
@@ -24,5 +35,533 @@ stages:
       size: 72483046
     - path: data/raw/manifest.json
       hash: md5
-      md5: 2d896941bc9274313f8eb70617b409ae
-      size: 321
+      md5: cfe585ccf680e49d243210d383cb8de3
+      size: 336
+  clean_features:
+    cmd: python -c " from pathlib import Path; import pandas as pd; from 
+      clustering_analysis.config import load_params; from 
+      clustering_analysis.clean import clean_frame, write_decision_log; from 
+      clustering_analysis.features import engineer_features; from 
+      clustering_analysis.io_utils import raw_path, interim_path, write_parquet;
+      P = load_params(); df = pd.read_parquet(raw_path('creditcard.parquet')); 
+      cleaned, stats = clean_frame(df, drop_duplicates=P.clean.drop_duplicates);
+      write_parquet(cleaned, interim_path('cleaned.parquet')); 
+      write_decision_log(stats, Path('reports/decision_log.md')); feat = 
+      engineer_features(cleaned.drop(columns=['Class']), 
+      period_seconds=P.features.time_period_seconds); write_parquet(feat, 
+      interim_path('features.parquet')); 
+      write_parquet(pd.Series(cleaned['Class'].values).to_frame('Class'), 
+      interim_path('labels.parquet')); "
+    deps:
+    - path: data/raw/creditcard.parquet
+      hash: md5
+      md5: 4535b75b5f542649c5e7242ee25d7f16
+      size: 72483046
+    - path: src/clustering_analysis/clean.py
+      hash: md5
+      md5: ad8a7b0e6c98a6ef9a2bef642afcf98a
+      size: 2819
+    - path: src/clustering_analysis/features.py
+      hash: md5
+      md5: ce32e9be9dff2228453a6ba32f992f95
+      size: 1222
+    params:
+      params.yaml:
+        clean:
+          drop_duplicates: true
+        features:
+          amount_transform: log1p
+          time_period_seconds: 86400
+    outs:
+    - path: data/interim/cleaned.parquet
+      hash: md5
+      md5: 49a912708b50940dbbb7d5e29ff0d75a
+      size: 72344923
+    - path: data/interim/features.parquet
+      hash: md5
+      md5: fff72ee5ff680d1d5a1d5889074b0218
+      size: 74270771
+    - path: data/interim/labels.parquet
+      hash: md5
+      md5: ee16808625db3bb99744191126481aeb
+      size: 4256
+    - path: reports/decision_log.md
+      hash: md5
+      md5: 8e51e1e0126f19e69da378f1298d2b3b
+      size: 1465
+  scale_reduce_tendency:
+    cmd: jupyter nbconvert --to notebook --execute 
+      notebooks/phase1_04_tendency_eda.ipynb --inplace
+    deps:
+    - path: data/interim/features.parquet
+      hash: md5
+      md5: fff72ee5ff680d1d5a1d5889074b0218
+      size: 74270771
+    - path: data/interim/labels.parquet
+      hash: md5
+      md5: ee16808625db3bb99744191126481aeb
+      size: 4256
+    - path: notebooks/phase1_04_tendency_eda.ipynb
+      hash: md5
+      md5: 0175dd858d0e5335a72f31ede149c140
+      size: 1019902
+    - path: src/clustering_analysis/reduce.py
+      hash: md5
+      md5: 3459980a35e540059fdc2b9109e7c887
+      size: 1104
+    - path: src/clustering_analysis/scaling.py
+      hash: md5
+      md5: a13dd23c42d60bc8fc76ce8631449e5b
+      size: 1767
+    - path: src/clustering_analysis/tendency.py
+      hash: md5
+      md5: 94ffbac36175d6fda6bd2240c6f27101
+      size: 2809
+    params:
+      params.yaml:
+        reduce:
+          pca_variance: 0.95
+          umap:
+            n_neighbors: 30
+            min_dist: 0.05
+            n_components_viz: 2
+            metric: euclidean
+        scaling:
+          strategy: hybrid
+          v_features:
+          - V1
+          - V2
+          - V3
+          - V4
+          - V5
+          - V6
+          - V7
+          - V8
+          - V9
+          - V10
+          - V11
+          - V12
+          - V13
+          - V14
+          - V15
+          - V16
+          - V17
+          - V18
+          - V19
+          - V20
+          - V21
+          - V22
+          - V23
+          - V24
+          - V25
+          - V26
+          - V27
+          - V28
+          robust_features:
+          - log_amount
+          - time_sin
+          - time_cos
+        seeds:
+          global: 42
+          ingest: 42
+          scaling: 43
+          reduce: 44
+          tendency: 45
+          algorithms: 46
+        tendency:
+          hopkins:
+            sample_fraction: 0.1
+            n_repeats: 5
+            pass_threshold: 0.6
+          vat:
+            n_legitimate: 2000
+            n_fraud: 492
+    outs:
+    - path: data/processed/X_pca.npy
+      hash: md5
+      md5: 4c9424063c7884b436db236bf6dd11b5
+      size: 63554752
+    - path: data/processed/X_scaled.npy
+      hash: md5
+      md5: 15e99ec78e6bc2dff1db89677476ea27
+      size: 70364176
+    - path: data/processed/labels.npy
+      hash: md5
+      md5: c5c2ff2bc3f42a4a96f34da481f718ff
+      size: 2269936
+    - path: data/processed/scaler.joblib
+      hash: md5
+      md5: 6436e22f7cd538e1340336cc965b0e2c
+      size: 3363
+    - path: data/processed/umap_2d.npy
+      hash: md5
+      md5: e26e11c0b8ca0ccee757346e88f5d505
+      size: 2269936
+    - path: reports/figures/pca_explained_variance.pdf
+      hash: md5
+      md5: af87f38cd99d80cd4a1c066e44bb7cc9
+      size: 15784
+    - path: reports/figures/scaling_comparison.pdf
+      hash: md5
+      md5: ade46da5765d8218ae99f6c3580cc2a7
+      size: 12295659
+    - path: reports/figures/umap_density.pdf
+      hash: md5
+      md5: 901a2325aa1fed92d28f269369c40491
+      size: 19782
+    - path: reports/figures/umap_fraud_overlay.pdf
+      hash: md5
+      md5: 79ef9bcdda944725288feb8892ce2968
+      size: 4473890
+    - path: reports/figures/vat_heatmap.pdf
+      hash: md5
+      md5: 5ecd7b8b773218de750ad655a6232390
+      size: 267223
+  phase2:
+    cmd: python -m clustering_analysis.run_portfolio
+    deps:
+    - path: data/processed/X_pca.npy
+      hash: md5
+      md5: 4c9424063c7884b436db236bf6dd11b5
+      size: 63554752
+    - path: data/processed/X_scaled.npy
+      hash: md5
+      md5: 15e99ec78e6bc2dff1db89677476ea27
+      size: 70364176
+    - path: data/processed/labels.npy
+      hash: md5
+      md5: c5c2ff2bc3f42a4a96f34da481f718ff
+      size: 2269936
+    - path: src/clustering_analysis/algorithms
+      hash: md5
+      md5: b2d73447031d8f82fd39ba40e3e20a61.dir
+      size: 19155
+      nfiles: 12
+    - path: src/clustering_analysis/evaluation.py
+      hash: md5
+      md5: 57473b33e47b7cb9145a67ec8a938ff5
+      size: 8505
+    - path: src/clustering_analysis/hierarchical.py
+      hash: md5
+      md5: b642e0e3010b12e4845a8b96fddb6e74
+      size: 5777
+    - path: src/clustering_analysis/k_selection.py
+      hash: md5
+      md5: 9b11e12f87f60215c342b3fb4650bc26
+      size: 7870
+    - path: src/clustering_analysis/metrics.py
+      hash: md5
+      md5: 1988850896f4661ab19fb640b87983b6
+      size: 6848
+    - path: src/clustering_analysis/run_portfolio.py
+      hash: md5
+      md5: a0066cbf633e8148039f8082162543b3
+      size: 24832
+    - path: src/clustering_analysis/dataset.py
+      hash: md5
+      md5: ec3a81226fc86459584f1733323194b5
+      size: 2021
+    - path: src/clustering_analysis/stability.py
+      hash: md5
+      md5: 0c0634f70f18819fa2aec53171c8e3a0
+      size: 5891
+    params:
+      params.yaml:
+        algorithms:
+          k_range:
+          - 2
+          - 3
+          - 4
+          - 5
+          - 6
+          - 7
+          - 8
+          - 10
+          - 12
+          - 15
+          families:
+            kmeans:
+              n_init: 20
+            ward:
+              linkage: ward
+            gmm:
+              covariance_type: full
+            hdbscan:
+              min_cluster_size: 100
+              min_samples: 10
+              cluster_selection_method: eom
+        k_selection:
+          silhouette:
+            sample_size: 5000
+          gap:
+            n_refs: 10
+            seed_offset: 1000
+          bootstrap:
+            n_resamples: 20
+            sample_fraction: 0.8
+        metrics:
+          internal:
+          - silhouette
+          - davies_bouldin
+          - calinski_harabasz
+          - dunn
+          external:
+          - ari
+          - nmi
+          - ami
+          - v_measure
+          - purity
+        phase2:
+          input_matrix: X_pca
+          full_algorithms:
+          - kmeans
+          - gmm
+          - hdbscan
+          portfolio_n: 20000
+          k_selection_n: 20000
+          ablation_n: 5000
+          consensus_n: 2000
+          error_analysis:
+            n_worst: 200
+            sample_size: 20000
+          primary_metric: silhouette
+        seeds:
+          global: 42
+          ingest: 42
+          scaling: 43
+          reduce: 44
+          tendency: 45
+          algorithms: 46
+        stability:
+          n_seeds: 20
+          seed_offset: 7000
+          consensus:
+            co_occurrence_threshold: 0.5
+    outs:
+    - path: data/processed/phase2_clusters.npy
+      hash: md5
+      md5: 51f79c76b4c6af7d5cda62f3466fdf45
+      size: 2269936
+    - path: reports/figures/phase2_agreement.pdf
+      hash: md5
+      md5: c844d9fb7bc05131925462cbd54cd2c8
+      size: 17360
+    - path: reports/figures/phase2_consensus.pdf
+      hash: md5
+      md5: 87e4b450c182f2fc15baea317c3c4d33
+      size: 204195
+    - path: reports/figures/phase2_dendrograms.pdf
+      hash: md5
+      md5: 88ca6191470240f7dbef036bcd713726
+      size: 18710
+    - path: reports/figures/phase2_k_selection.pdf
+      hash: md5
+      md5: ba15ce8f80c910c8f8f8a53a89248872
+      size: 21598
+    - path: reports/figures/phase2_silhouette.pdf
+      hash: md5
+      md5: 5bec7517b78e8f0f59c8f5aa6331e48c
+      size: 273780
+    - path: results/phase2/summary.json
+      hash: md5
+      md5: 17eebd7593fc3102df8706876384e3eb
+      size: 12005
+  phase3:
+    cmd: python -m clustering_analysis.run_deep_clustering
+    deps:
+    - path: data/processed/phase2_clusters.npy
+      hash: md5
+      md5: 51f79c76b4c6af7d5cda62f3466fdf45
+      size: 2269936
+    - path: results/phase2/summary.json
+      hash: md5
+      md5: 17eebd7593fc3102df8706876384e3eb
+      size: 12005
+    - path: src/clustering_analysis/deep
+      hash: md5
+      md5: 17fc9fdbf95b54fb1a9084f3dbf09644.dir
+      size: 51108
+      nfiles: 10
+    - path: src/clustering_analysis/downstream.py
+      hash: md5
+      md5: e9d58504d5216bb7d3351e7c230fb651
+      size: 6992
+    - path: src/clustering_analysis/drift.py
+      hash: md5
+      md5: a908212612f3c555b390cfbd2305a41c
+      size: 4021
+    - path: src/clustering_analysis/fairness.py
+      hash: md5
+      md5: 2e822f48862f95019c61f1d2e6e28db1
+      size: 4606
+    - path: src/clustering_analysis/interpretation.py
+      hash: md5
+      md5: f018ae7f007b8062140aa0ce591cca77
+      size: 6121
+    - path: src/clustering_analysis/run_deep_clustering.py
+      hash: md5
+      md5: 12aef1abf2fb3f49f2a0c459644e1084
+      size: 31222
+    - path: src/clustering_analysis/registry.py
+      hash: md5
+      md5: 2d36c46158eecca27acd1f7ce0709a98
+      size: 6011
+    - path: src/clustering_analysis/significance.py
+      hash: md5
+      md5: 6831256d1d90a1b27af6fe07c44c2972
+      size: 4864
+    params:
+      params.yaml:
+        deep:
+          autoencoder:
+            latent_dim: 10
+            hidden_dims:
+            - 64
+            - 32
+            epochs: 100
+            batch_size: 256
+            lr: 0.001
+          ae_kmeans:
+            epochs: 50
+          dec:
+            init_epochs: 100
+            dec_epochs: 150
+            update_interval: 5
+            tol: 0.001
+            gamma: 1.0
+          dec_infonce:
+            contrastive_weight: 0.1
+            temperature: 0.5
+            n_negatives: 1024
+        interpretation:
+          tree_max_depth: 4
+          tree_min_samples_leaf: 50
+          shap_background: 200
+          dice_features:
+          - V14
+          - V4
+          - V12
+          - V10
+          - Amount
+        phase3:
+          input_matrix: X_scaled
+          train_n: 40000
+          eval_n: 40000
+          downstream:
+            test_fraction: 0.3
+          sensitivity:
+            alt_scaler: standard
+          drift:
+            n_bins: 10
+            psi_threshold: 0.2
+            split_fraction: 0.5
+        seeds:
+          global: 42
+          ingest: 42
+          scaling: 43
+          reduce: 44
+          tendency: 45
+          algorithms: 46
+        significance:
+          n_bootstrap: 1000
+          ci_level: 0.95
+          n_permutations: 1000
+          permutation_seed: 9001
+    outs:
+    - path: data/processed/phase3_clusters.npy
+      hash: md5
+      md5: 8631314b7a82fa2ff82eefe9a6ba8527
+      size: 320128
+    - path: data/processed/phase3_latent.npy
+      hash: md5
+      md5: 21f1e60c7b6e4b768b9d93d7ee1f9990
+      size: 1600128
+    - path: data/processed/phase3_subsample_idx.npy
+      hash: md5
+      md5: 64ba6c5d32ca08f5ccebeab8ee650ad1
+      size: 320128
+    - path: models/registry
+      hash: md5
+      md5: 26978292a3d563fbc08749dfc4ccceef.dir
+      size: 1740
+      nfiles: 2
+    - path: reports/figures/phase3_deep_losses.pdf
+      hash: md5
+      md5: 7d8ca364bc169b26a023633f0cd27ae5
+      size: 19077
+    - path: reports/figures/phase3_latent.pdf
+      hash: md5
+      md5: 71c053a804623174b59ee22c713e19dc
+      size: 1246047
+    - path: results/phase3/summary.json
+      hash: md5
+      md5: cb4557c8980c8d4804e3a1a57cfa82ee
+      size: 14986
+  report:
+    cmd: cd reports && make all
+    deps:
+    - path: reports/analysis_plan.tex
+      hash: md5
+      md5: 59b0f92303b410f09ae9f421c22bc3b4
+      size: 2804
+    - path: reports/figures/pca_explained_variance.pdf
+      hash: md5
+      md5: af87f38cd99d80cd4a1c066e44bb7cc9
+      size: 15784
+    - path: reports/figures/phase2_agreement.pdf
+      hash: md5
+      md5: c844d9fb7bc05131925462cbd54cd2c8
+      size: 17360
+    - path: reports/figures/phase2_k_selection.pdf
+      hash: md5
+      md5: ba15ce8f80c910c8f8f8a53a89248872
+      size: 21598
+    - path: reports/figures/phase3_latent.pdf
+      hash: md5
+      md5: 71c053a804623174b59ee22c713e19dc
+      size: 1246047
+    - path: reports/figures/umap_density.pdf
+      hash: md5
+      md5: 901a2325aa1fed92d28f269369c40491
+      size: 19782
+    - path: reports/figures/vat_heatmap.pdf
+      hash: md5
+      md5: 5ecd7b8b773218de750ad655a6232390
+      size: 267223
+    - path: reports/phase1_report.tex
+      hash: md5
+      md5: d6bf5e52275809ecc7a3563e9ae52159
+      size: 6197
+    - path: reports/phase2_report.tex
+      hash: md5
+      md5: 05af5d2a6801cfc8c14d7956587a444f
+      size: 20034
+    - path: reports/phase3_report.tex
+      hash: md5
+      md5: 3e1a8796604fdba288219e43fa901e29
+      size: 30161
+    - path: results/phase2/summary.json
+      hash: md5
+      md5: 17eebd7593fc3102df8706876384e3eb
+      size: 12005
+    - path: results/phase3/summary.json
+      hash: md5
+      md5: cb4557c8980c8d4804e3a1a57cfa82ee
+      size: 14986
+    outs:
+    - path: reports/analysis_plan.pdf
+      hash: md5
+      md5: 607896abd1b620b05c8f117893df3920
+      size: 112447
+    - path: reports/phase1_report.pdf
+      hash: md5
+      md5: 4c61f4e44939739b5fffeb0349773471
+      size: 12704396
+    - path: reports/phase2_report.pdf
+      hash: md5
+      md5: 8bb42aa0febd21d6a482a333eda48359
+      size: 717681
+    - path: reports/phase3_report.pdf
+      hash: md5
+      md5: c6c15efcec3928f7f251d37e131d34ea
+      size: 1458491

@@ -1,12 +1,20 @@
 stages:
   ingest:
     cmd: >-
-      python -c "from pathlib import Path; from clustering_analysis.ingest import ingest_csv;
-      ingest_csv(Path('data/raw/creditcard.csv'), source='kaggle://mlg-ulb/creditcardfraud')"
+      python -c "
+      from pathlib import Path;
+      from clustering_analysis.config import load_params;
+      from clustering_analysis.ingest import ingest_csv;
+      P = load_params();
+      ingest_csv(Path('data/raw/creditcard.csv'), source=P.ingest.source,
+      expected_rows=P.ingest.expected_rows, expected_columns=P.ingest.expected_columns,
+      checksum_sha256=P.ingest.checksum_sha256)"
     deps:
       - data/raw/creditcard.csv
       - src/clustering_analysis/ingest.py
       - src/clustering_analysis/schemas.py
+    params:
+      - ingest
     outs:
       - data/raw/creditcard.parquet
       - data/raw/manifest.json
@@ -18,15 +26,15 @@ stages:
       from clustering_analysis.config import load_params;
       from clustering_analysis.clean import clean_frame, write_decision_log;
       from clustering_analysis.features import engineer_features;
-      from clustering_analysis.io_utils import raw_path, interim_path;
+      from clustering_analysis.io_utils import raw_path, interim_path, write_parquet;
       P = load_params();
       df = pd.read_parquet(raw_path('creditcard.parquet'));
       cleaned, stats = clean_frame(df, drop_duplicates=P.clean.drop_duplicates);
-      cleaned.to_parquet(interim_path('cleaned.parquet'), index=False);
+      write_parquet(cleaned, interim_path('cleaned.parquet'));
       write_decision_log(stats, Path('reports/decision_log.md'));
       feat = engineer_features(cleaned.drop(columns=['Class']), period_seconds=P.features.time_period_seconds);
-      feat.to_parquet(interim_path('features.parquet'), index=False);
-      pd.Series(cleaned['Class'].values).to_frame('Class').to_parquet(interim_path('labels.parquet'), index=False);
+      write_parquet(feat, interim_path('features.parquet'));
+      write_parquet(pd.Series(cleaned['Class'].values).to_frame('Class'), interim_path('labels.parquet'));
       "
     deps:
       - data/raw/creditcard.parquet
@@ -39,7 +47,10 @@ stages:
       - data/interim/cleaned.parquet
       - data/interim/features.parquet
       - data/interim/labels.parquet
-      - reports/decision_log.md
+      # Deliverables under reports/ stay in Git so a fresh clone can read them
+      # without a DVC remote; DVC therefore tracks them uncached.
+      - reports/decision_log.md:
+          cache: false
 
   scale_reduce_tendency:
     cmd: jupyter nbconvert --to notebook --execute notebooks/phase1_04_tendency_eda.ipynb --inplace
@@ -61,19 +72,111 @@ stages:
       - data/processed/umap_2d.npy
       - data/processed/labels.npy
       - data/processed/scaler.joblib
-      - reports/figures/pca_explained_variance.pdf
-      - reports/figures/umap_density.pdf
-      - reports/figures/umap_fraud_overlay.pdf
-      - reports/figures/vat_heatmap.pdf
+      - reports/figures/pca_explained_variance.pdf:
+          cache: false
+      - reports/figures/umap_density.pdf:
+          cache: false
+      - reports/figures/umap_fraud_overlay.pdf:
+          cache: false
+      - reports/figures/scaling_comparison.pdf:
+          cache: false
+      - reports/figures/vat_heatmap.pdf:
+          cache: false
+
+  phase2:
+    cmd: python -m clustering_analysis.run_portfolio
+    deps:
+      - data/processed/X_pca.npy
+      - data/processed/X_scaled.npy
+      - data/processed/labels.npy
+      - src/clustering_analysis/run_portfolio.py
+      - src/clustering_analysis/dataset.py
+      - src/clustering_analysis/evaluation.py
+      - src/clustering_analysis/hierarchical.py
+      - src/clustering_analysis/k_selection.py
+      - src/clustering_analysis/metrics.py
+      - src/clustering_analysis/stability.py
+      - src/clustering_analysis/algorithms
+    params:
+      - seeds
+      - algorithms
+      - k_selection
+      - metrics
+      - stability
+      - phase2
+    outs:
+      - data/processed/phase2_clusters.npy
+      - results/phase2/summary.json:
+          cache: false
+      - reports/figures/phase2_k_selection.pdf:
+          cache: false
+      - reports/figures/phase2_agreement.pdf:
+          cache: false
+      - reports/figures/phase2_consensus.pdf:
+          cache: false
+      - reports/figures/phase2_dendrograms.pdf:
+          cache: false
+      - reports/figures/phase2_silhouette.pdf:
+          cache: false
+    # reports/tables/*.tex are regenerated here too, but are not declared as
+    # outs: Phase 3 writes into the same directory, and DVC allows only one
+    # stage to own a given path. summary.json already pins this stage's state.
+
+  phase3:
+    cmd: python -m clustering_analysis.run_deep_clustering
+    deps:
+      - data/processed/phase2_clusters.npy
+      - results/phase2/summary.json
+      - src/clustering_analysis/run_deep_clustering.py
+      - src/clustering_analysis/deep
+      - src/clustering_analysis/downstream.py
+      - src/clustering_analysis/drift.py
+      - src/clustering_analysis/fairness.py
+      - src/clustering_analysis/interpretation.py
+      - src/clustering_analysis/registry.py
+      - src/clustering_analysis/significance.py
+    params:
+      - seeds
+      - deep
+      - interpretation
+      - significance
+      - phase3
+    outs:
+      - data/processed/phase3_clusters.npy
+      - data/processed/phase3_latent.npy
+      - data/processed/phase3_subsample_idx.npy
+      - results/phase3/summary.json:
+          cache: false
+      - reports/figures/phase3_deep_losses.pdf:
+          cache: false
+      - reports/figures/phase3_latent.pdf:
+          cache: false
+      - models/registry:
+          cache: false
 
   report:
-    cmd: cd reports && make analysis_plan.pdf phase1_report.pdf
+    cmd: cd reports && make all
     deps:
       - reports/analysis_plan.tex
       - reports/phase1_report.tex
+      - reports/phase2_report.tex
+      - reports/phase3_report.tex
+      # figures are named individually rather than as a directory: their parents
+      # are outs of earlier stages, and a directory dep would overlap those.
       - reports/figures/pca_explained_variance.pdf
       - reports/figures/umap_density.pdf
       - reports/figures/vat_heatmap.pdf
+      - reports/figures/phase2_k_selection.pdf
+      - reports/figures/phase2_agreement.pdf
+      - reports/figures/phase3_latent.pdf
+      - results/phase2/summary.json
+      - results/phase3/summary.json
     outs:
-      - reports/analysis_plan.pdf
-      - reports/phase1_report.pdf
+      - reports/analysis_plan.pdf:
+          cache: false
+      - reports/phase1_report.pdf:
+          cache: false
+      - reports/phase2_report.pdf:
+          cache: false
+      - reports/phase3_report.pdf:
+          cache: false
