@@ -48,10 +48,15 @@ def _log_wk(X: np.ndarray, k: int, seed: int) -> float:
 
 
 def select_k_elbow(X: np.ndarray, k_range: list[int], *, seed: int = 0) -> KSelectionResult:
-    """Knee of the inertia curve via the max-distance-to-line heuristic.
+    """Knee of the inertia curve, located by the Kneedle construction.
 
-    Lower inertia is better, but the elbow marks diminishing returns, so we
-    pick the point of maximum curvature, not the minimum.
+    Lower inertia is always better, so the minimum is never the answer — the
+    elbow marks where returns start diminishing. Kneedle (Satopää et al. 2011)
+    formalises "elbow" as the point of maximum perpendicular distance from the
+    curve to the chord joining its endpoints, which is what is computed below.
+    That is the quantitative localisation the brief asks for; it is implemented
+    directly rather than via the ``kneed`` package so the project carries no
+    dependency for six lines of geometry.
     """
     inertias = {k: _inertia(X, k, seed) for k in k_range}
     ks = sorted(inertias)
