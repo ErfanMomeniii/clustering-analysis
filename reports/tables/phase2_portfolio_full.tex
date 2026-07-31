@@ -1,0 +1,14 @@
+\begin{table}[htbp]
+\centering
+\begin{tabular}{lrrrrrrrrrrrrr}
+\toprule
+algorithm & k\_requested & n\_clusters & n\_noise & runtime\_s & silhouette & davies\_bouldin & calinski\_harabasz & dunn & ari & nmi & ami & v\_measure & purity \\
+\midrule
+kmeans & 2 & 2 & 0 & 5.068 & 0.189 & 2.271 & 11297.405 & 0.055 & 0.008 & 0.002 & 0.002 & 0.002 & 0.998 \\
+gmm & 2 & 2 & 0 & 13.866 & 0.154 & 6.504 & 4905.658 & 0.017 & 0.005 & 0.005 & 0.005 & 0.005 & 0.998 \\
+hdbscan & 2 & 357 & 156{,}335 & 1580.891 & 0.143 & 1.713 & 1182.041 & 0.024 & $-6.504\times 10^{-4}$ & 0.002 & 0.002 & 0.002 & 0.999 \\
+\bottomrule
+\end{tabular}
+\caption{Portfolio on all 283{,}726 rows at $k=2$ (Ward excluded: its distance matrix is $\sim$322\,GB).}
+\label{tab:portfolio-full}
+\end{table}

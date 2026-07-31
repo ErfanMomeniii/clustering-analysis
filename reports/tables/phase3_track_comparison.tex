@@ -1,0 +1,15 @@
+\begin{table}[htbp]
+\centering
+\begin{tabular}{lrrrrrrrrrrrrr}
+\toprule
+algorithm & k\_requested & n\_clusters & n\_noise & runtime\_s & silhouette & davies\_bouldin & calinski\_harabasz & dunn & ari & nmi & ami & v\_measure & purity \\
+\midrule
+phase2:kmeans & 2 & 2 & 0 & -- & 0.171 & 2.299 & 1568.853 & 0.044 & 0.010 & 0.003 & 0.003 & 0.003 & 0.998 \\
+ae\_kmeans & 2 & 2 & 0 & 25.786 & 0.161 & 3.463 & 1420.771 & 0.030 & 0.006 & 0.002 & 0.002 & 0.002 & 0.998 \\
+dec & 2 & 2 & 0 & 24.294 & 0.062 & 5.613 & 990.463 & 0.026 & $4.063\times 10^{-4}$ & 0.002 & 0.002 & 0.002 & 0.998 \\
+dec\_infonce & 2 & 2 & 0 & 25.679 & 0.076 & 5.454 & 1016.949 & 0.028 & $-7.850\times 10^{-4}$ & $4.855\times 10^{-4}$ & $4.478\times 10^{-4}$ & $4.855\times 10^{-4}$ & 0.998 \\
+\bottomrule
+\end{tabular}
+\caption{Advanced track vs the Phase 2 winner on the same 40{,}000 stratified rows at $k=2$.}
+\label{tab:track}
+\end{table}

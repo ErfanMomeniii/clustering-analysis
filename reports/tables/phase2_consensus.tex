@@ -1,0 +1,13 @@
+\begin{table}[htbp]
+\centering
+\begin{tabular}{lrrrrrrrrrrrrr}
+\toprule
+algorithm & k\_requested & n\_clusters & n\_noise & runtime\_s & silhouette & davies\_bouldin & calinski\_harabasz & dunn & ari & nmi & ami & v\_measure & purity \\
+\midrule
+kmeans & 2 & 2 & 0 & 0.081 & 0.813 & 0.721 & 120.452 & 0.766 & 0.665 & 0.533 & 0.533 & 0.533 & 0.999 \\
+consensus & 2 & 2 & 0 & -- & -0.010 & 18.219 & 0.824 & 0.008 & -0.003 & $7.172\times 10^{-4}$ & $-8.437\times 10^{-4}$ & $7.172\times 10^{-4}$ & 0.999 \\
+\bottomrule
+\end{tabular}
+\caption{Consensus clustering vs its best single base clusterer on the same rows (brief §3.5).}
+\label{tab:consensus}
+\end{table}

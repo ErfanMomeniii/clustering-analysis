@@ -1,16 +1,19 @@
 PDFLATEX := pdflatex -interaction=nonstopmode -halt-on-error
 
-.PHONY: all clean analysis_plan phase1_report
+.PHONY: all clean
 
-all: analysis_plan.pdf phase1_report.pdf
+all: analysis_plan.pdf phase1_report.pdf phase2_report.pdf phase3_report.pdf
 
-analysis_plan.pdf: analysis_plan.tex
-	$(PDFLATEX) analysis_plan.tex
-	$(PDFLATEX) analysis_plan.tex
+# Two passes so \ref / \label cross-references resolve.
+%.pdf: %.tex
+	$(PDFLATEX) $<
+	$(PDFLATEX) $<
 
-phase1_report.pdf: phase1_report.tex
-	$(PDFLATEX) phase1_report.tex
-	$(PDFLATEX) phase1_report.tex
+# The phase reports \input generated tables and figures, so a stale artefact is
+# a build dependency rather than a transcription risk nobody notices.
+phase1_report.pdf: phase1_report.tex $(wildcard figures/*.pdf)
+phase2_report.pdf: phase2_report.tex $(wildcard tables/phase2_*.tex) $(wildcard figures/phase2_*.pdf)
+phase3_report.pdf: phase3_report.tex $(wildcard tables/phase3_*.tex) $(wildcard figures/phase3_*.pdf)
 
 clean:
 	rm -f *.aux *.log *.out *.toc *.bbl *.blg

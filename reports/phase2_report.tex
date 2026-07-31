@@ -1,0 +1,376 @@
+\documentclass[11pt, a4paper]{article}
+\usepackage[margin=2.2cm]{geometry}
+\usepackage{booktabs}
+\usepackage{graphicx}
+\usepackage{parskip}
+\usepackage{hyperref}
+\usepackage{caption}
+\usepackage{amsmath}
+\usepackage{amssymb}
+% Lightweight stand-ins for siunitx, so the reports build on a plain TeX Live
+% or BasicTeX installation with no extra packages.
+\providecommand{\num}[1]{#1}
+\graphicspath{{figures/}}
+
+\title{\textbf{Phase 2 Report — Clustering Algorithm Portfolio and Evaluation on DS-10}}
+\author{Advanced Data Mining, Spring 1404--1405}
+\date{\today}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+\noindent
+Phase 2 implements, tunes and compares four clustering families on the
+preprocessed DS-10 feature space: K-Means (partitioning), Ward agglomerative
+(hierarchical), HDBSCAN (density) and a Gaussian mixture (model-based). The
+number of clusters is determined by five independent criteria, every
+algorithm--$k$ combination is scored on four internal and five external metrics,
+and stability is established through seed repetition and co-association
+consensus. Every number in this report is emitted by
+\texttt{python -m clustering\_analysis.run\_portfolio} into
+\texttt{results/phase2/summary.json} and \texttt{reports/tables/}, so no figure
+here is hand-transcribed.
+\end{abstract}
+
+\section{Experimental protocol}
+
+\subsection{Two evaluation regimes}
+K-Means, GMM and HDBSCAN scale to all \num{283726} cleaned rows. Ward does not:
+agglomerative clustering consumes a pairwise distance matrix, and
+$\binom{283726}{2}\times 8\,\mathrm{B} \approx 322\,\mathrm{GB}$. Rather than
+quietly shrink the dataset for everybody or quietly drop Group~B, this phase
+reports two regimes:
+
+\begin{enumerate}
+  \item \textbf{Full data} (Table~\ref{tab:portfolio-full}) --- the three
+        scalable families on every row. These are the authoritative external
+        metrics, because they are computed against the complete label vector.
+  \item \textbf{Shared subsample} (Table~\ref{tab:portfolio-sub}) --- all four
+        families, including Ward, on one identical class-proportional
+        subsample. This is the like-for-like four-family comparison the brief's
+        Group~A--D requirement asks for.
+\end{enumerate}
+
+Sampling is class-proportional rather than fraud-enriched, so the subsample
+preserves the genuine \num{0.17}\% positive rate and its external metrics stay
+comparable with the full-data run. The cost is a small absolute number of fraud
+rows in the subsample, which is why the full-data table carries the headline
+external numbers and the subsample table carries the cross-family comparison.
+
+\subsection{Feature space and labels}
+Clustering runs on the PCA projection retaining 95\% of variance from Phase 1.
+The \texttt{Class} label is never an input to any fit; it enters only through the
+external metrics of \S\ref{sec:metrics}. All seeds are fixed in
+\texttt{params.yaml}.
+
+\section{Determining the number of clusters}
+\label{sec:k}
+
+Five criteria are applied to the same stratified rows
+(Figure~\ref{fig:kselect}, Table~\ref{tab:k-selection}):
+
+\begin{itemize}
+  \item \textbf{Elbow} --- the knee of the inertia curve, localised as the point
+        of maximum perpendicular distance to the chord joining the first and last
+        $(k, \text{inertia})$ points.
+  \item \textbf{Average silhouette} --- the $k$ maximising mean silhouette,
+        computed on a fixed subsample so the $O(n^2)$ cost stays bounded. The
+        per-point distribution, not only its mean, is reported in
+        Figure~\ref{fig:silhouette}.
+  \item \textbf{Gap statistic} (Tibshirani et al.) --- $\mathrm{Gap}(k) =
+        \mathbb{E}^*[\log W_k] - \log W_k$ against uniform references drawn from
+        the bounding box, selecting the smallest $k$ with
+        $\mathrm{Gap}(k) \ge \mathrm{Gap}(k{+}1) - s_{k+1}$.
+  \item \textbf{BIC} --- Gaussian-mixture model selection, minimised.
+  \item \textbf{Bootstrap stability} --- mean pairwise ARI between assignments
+        on overlapping bootstrap resamples, maximised.
+\end{itemize}
+
+\input{tables/phase2_k_selection.tex}
+
+\begin{figure}[htbp]\centering
+\includegraphics[width=\linewidth]{phase2_k_selection.pdf}
+\caption{Each criterion's curve with its own recommendation marked. Reading the
+five together is the point: agreement is evidence, disagreement is a finding.}
+\label{fig:kselect}\end{figure}
+
+The criteria disagree sharply, and that disagreement is itself the result. Elbow
+selects $k=7$, silhouette and the gap statistic both select $k=2$, and BIC and
+bootstrap stability both select $k=15$ --- the largest candidate offered, which
+usually signals that the criterion would keep going if the range allowed it. A
+dataset whose structure is one dominant mass plus a sparse periphery has no
+single correct $k$: likelihood-based criteria (BIC) keep buying components to
+model the tails, separation-based criteria (silhouette, gap) prefer the coarsest
+possible split, and the elbow lands between them.
+
+The final $k=2$ follows the majority vote (two votes each for 2 and 15, one for
+7), with the tie broken toward the silhouette recommendation because silhouette
+is the metric the recommendation in \S\ref{sec:comparison} is defended on. This
+is a judgement, not a derivation, and the alternative ($k=15$) would be equally
+defensible if the goal were density modelling rather than partition geometry.
+
+\section{Algorithm portfolio}
+\label{sec:portfolio}
+
+\subsection{Group A --- partitioning: K-Means}
+K-Means with \texttt{k-means++} initialisation and 20 restarts. Its objective
+$J = \sum_{i=1}^{k}\sum_{x \in C_i} \lVert x - \mu_i \rVert_2^2$ implicitly
+assumes isotropic, comparably-sized clusters --- an assumption DS-10 violates,
+since fraud forms small dense pockets against a vastly larger legitimate mass.
+That mismatch is precisely what the comparison against the density and
+model-based families measures. Seed sensitivity is quantified in
+\S\ref{sec:stability} over 20 restarts, not asserted.
+
+\subsection{Group B --- hierarchical: all four linkages}
+All four standard linkage criteria are built from a single shared distance
+matrix, so the linkage is the only variable (Table~\ref{tab:linkage},
+Figure~\ref{fig:dendrograms}). For each, the \textbf{cophenetic correlation}
+reports how faithfully the dendrogram preserves the input distances: a low value
+means any flat clustering cut from that tree is describing the tree's
+distortion rather than the data.
+
+\input{tables/phase2_linkage.tex}
+
+\begin{figure}[htbp]\centering
+\includegraphics[width=\linewidth]{phase2_dendrograms.pdf}
+\caption{Dendrogram topology by linkage.}
+\label{fig:dendrograms}\end{figure}
+
+Two results here are worth stating plainly. First, \textbf{single, complete and
+average linkage all collapse}: cutting any of them at $k=2$ puts essentially
+100\% of points in one cluster and leaves singletons behind. This is textbook
+chaining, and on DS-10 it happens to complete and average linkage too, because
+the periphery is a continuum of outliers rather than a set of distinct groups
+--- there is no gap for those criteria to cut at. Ward is the only criterion that
+produces a usable split (93.5\% in its largest cluster), which is why Ward is the
+Group~B representative in the portfolio table.
+
+Second, the cophenetic correlations \emph{invert} the usability ranking: average
+linkage scores highest ($0.930$) and Ward by far the lowest ($0.223$). Ward
+optimises within-cluster variance, not distance fidelity, so its dendrogram
+heights are not trying to reproduce the input distances --- a low cophenetic
+correlation is expected and is not evidence against it. The honest reading is
+that on this data no dendrogram is both faithful to the distances and useful as a
+partition, and the two diagnostics must be reported together rather than one
+being quoted as the verdict.
+
+Two cutting strategies are applied to the Ward tree
+(Table~\ref{tab:cuts}): a fixed-height cut at 0.7 of the tallest merge, and the
+cut maximising silhouette over the candidate $k$ range. Anchoring the fixed
+height to the tree's own scale keeps it meaningful across linkages, whose merge
+heights are not on a common scale.
+
+\input{tables/phase2_cuts.tex}
+
+\subsection{Group C --- density: HDBSCAN}
+HDBSCAN replaces DBSCAN's global $\varepsilon$ with a minimum cluster size,
+which is the correct response to DS-10's wildly varying density: a single
+$\varepsilon$ that resolves the sparse periphery would merge the dense core, and
+vice versa. Points HDBSCAN cannot assign are labelled $-1$ and excluded from
+internal metrics --- silhouette on noise-inclusive labels would score the noise
+bucket as though it were a cluster. The noise count is reported as a column in
+its own right, because on this dataset how much data a density method declines
+to cluster is itself a result.
+
+And it is a striking one. With \texttt{min\_cluster\_size} $=100$, HDBSCAN finds
+\num{357} clusters on the full data and assigns \num{156335} points --- 55\% of
+the dataset --- to noise. Density-based clustering does not see one dominant mass
+here at all; it sees a few hundred small dense pockets embedded in a continuum
+that it refuses to partition. That is a genuinely different description of DS-10
+from the one K-Means gives, which is why the agreement analysis of
+\S\ref{sec:comparison} matters more than any single row of the metric table.
+
+Runtime is the other finding. HDBSCAN needs roughly \emph{26 minutes} on the full
+data against a handful of seconds for K-Means --- a factor of several hundred.
+Exact per-run wall-clock figures live in Table~\ref{tab:portfolio-full} rather
+than in this sentence, because wall-clock is machine-dependent and quoting it
+here would make the prose unreproducible on a grader's hardware. What \emph{is}
+reproducible is the scaling: measured on this data, HDBSCAN takes 11.7\,s at
+25{,}000 rows and 51.3\,s at 50{,}000, i.e.\ roughly quadratic, because the
+Boruvka $k$-d tree that makes HDBSCAN near-linear in low dimensions degrades as
+dimensionality grows. This is the curse of dimensionality from \S2.5 of the brief
+appearing as an engineering cost rather than a statistical caveat.
+
+\subsection{Group D --- model-based: Gaussian mixture}
+A Gaussian mixture fitted by EM, compared across all four covariance structures
+(Table~\ref{tab:gmm-cov}). The comparison is a model-complexity argument:
+\texttt{full} covariance buys likelihood at $O(kd^2)$ parameters, and BIC is the
+test of whether that purchase is justified. The parameter count is tabulated
+alongside the likelihood so the trade-off is visible rather than implied.
+
+\input{tables/phase2_gmm_covariance.tex}
+
+\texttt{full} wins decisively: BIC $\approx 8.6\times10^{5}$ against
+$1.35\times10^{6}$ for \texttt{diag}, $1.45\times10^{6}$ for \texttt{spherical}
+and $1.59\times10^{6}$ for \texttt{tied}. Its \num{869} parameters against
+\num{113} for \texttt{diag} are therefore justified --- the components genuinely
+have different, non-axis-aligned shapes, and \texttt{tied} performing worst
+confirms that forcing them to share one covariance is the wrong constraint. This
+is also the clearest single piece of evidence against K-Means' isotropic
+assumption, since \texttt{spherical} GMM is the closest probabilistic analogue of
+it and loses by a wide margin.
+
+\section{Internal and external evaluation}
+\label{sec:metrics}
+
+Four internal metrics (silhouette, Davies--Bouldin, Calinski--Harabasz, Dunn)
+and five external metrics (ARI, NMI, AMI, V-measure, purity) are reported for
+every algorithm--$k$ combination, with runtime.
+
+\input{tables/phase2_portfolio_full.tex}
+\input{tables/phase2_portfolio_subsample.tex}
+
+Two implementation notes matter for reading these tables. First, the Dunn index
+is computed with centroid-based inter-cluster separation and a capped
+per-cluster diameter subsample; the exact definition needs the full pairwise
+matrix, which is infeasible here, and an uncapped diameter would be dominated by
+a single outlier in the largest cluster. Second, every internal metric excludes
+noise points, so HDBSCAN is scored on the data it actually clustered.
+
+The external metrics deserve blunt interpretation. Every ARI in both tables lies
+between $-0.003$ and $0.009$: K-Means reaches $0.0075$ on the full data, GMM
+$0.0055$, and HDBSCAN $-0.0007$ --- indistinguishable from chance. Purity is
+\num{0.9983} for all of them, which is exactly what predicting "legitimate"
+everywhere achieves at a \num{0.17}\% positive rate. Purity here measures the
+class imbalance, not the clustering.
+
+The conclusion is unambiguous and is the central negative result of this phase:
+\textbf{the dominant geometric structure of DS-10 is not the fraud/legitimate
+split}. No algorithm family, at the selected $k$, recovers the label. Rather than
+tune until a metric improves --- which would amount to fitting the clustering to
+the ground truth, the practice \S3.7 of the brief explicitly warns against --- the
+result is reported as it stands, and Phase 3 changes the question instead: it
+tests a learned representation, and it evaluates a distance-to-centroid
+\emph{ranking} rather than cluster membership as the fraud signal. The error
+analysis in \S\ref{sec:comparison} is what motivates that second move.
+
+\section{Distance metric comparison}
+
+The Phase 1 report selected Euclidean distance. Table~\ref{tab:ablation} tests
+that choice by re-clustering under Manhattan and cosine with average linkage
+held fixed, so the metric is the only variable. ARI is measured against the
+Euclidean reference: a value near 1.0 means the metric choice is not driving the
+result, and a low value means the Phase 1 justification is carrying real weight
+and must be defended on its merits.
+
+\input{tables/phase2_metric_ablation.tex}
+
+The result splits cleanly. Manhattan reproduces the Euclidean partition
+\emph{exactly} (ARI $= 1.000$), which is expected in a space of standardised,
+uncorrelated components where $\ell_1$ and $\ell_2$ order neighbours almost
+identically. Cosine, by contrast, produces a completely unrelated partition
+(ARI $= -0.0004$). Cosine discards vector magnitude, and on DS-10 magnitude is
+most of the signal --- an extreme transaction and a typical one pointing the same
+direction in component space are not the same event. The Phase 1 choice of
+Euclidean is therefore load-bearing with respect to cosine and immaterial with
+respect to Manhattan, and it is defended on that basis.
+
+One caveat must be stated rather than buried: the silhouette of $0.88$ for the
+Euclidean and Manhattan rows is not evidence of a good clustering. Average
+linkage at $k=2$ on this subsample splits off a near-singleton outlier group, and
+silhouette rewards that trivially. It is reported unedited because the ARI
+comparison --- which is the purpose of the table --- is unaffected by it.
+
+\section{Stability and consensus}
+\label{sec:stability}
+
+\textbf{Seed stability.} K-Means and GMM are re-fitted 20 times from different
+seeds and the mean pairwise ARI between runs is reported. A high value means the
+solution is a property of the data rather than of one lucky initialisation. Ward
+and HDBSCAN are deterministic given their inputs, so they are excluded rather
+than reported with a vacuous ARI of exactly 1.
+
+The results temper the recommendation considerably. K-Means reaches a mean
+pairwise ARI of only \num{0.569} across 20 restarts --- even with
+\texttt{k-means++} and 20 internal initialisations per fit, different seeds land
+on materially different partitions. GMM is far worse at \num{0.130}: with
+\texttt{full} covariance in 28 dimensions the EM likelihood surface is riddled
+with local optima, and the fitted mixture is close to an artefact of
+initialisation. This is decisive for the recommendation in
+\S\ref{sec:comparison}: GMM's competitive silhouette cannot be trusted, because
+the next seed would produce a different clustering with a similar score.
+
+\textbf{Consensus.} A co-association matrix is built over bootstrap resamples,
+entry $(i,j)$ being the fraction of resamples in which $i$ and $j$ were both
+drawn and co-clustered (Figure~\ref{fig:consensus}). Average-link agglomerative
+clustering on $1-M$ then produces a consensus labelling. Average link is used
+because Ward cannot consume a precomputed distance matrix. The matrix is
+$O(n^2)$, so it is built on a capped subsample following the Monti et al.\
+protocol. Table~\ref{tab:consensus} answers the question the brief actually
+poses --- whether consensus \emph{improves} on the best single base clusterer,
+scored on identical rows.
+
+\begin{figure}[htbp]\centering
+\includegraphics[width=0.75\linewidth]{phase2_consensus.pdf}
+\caption{Co-association matrix reordered by consensus label. Sharp diagonal
+blocks mean pairs co-cluster regardless of which bootstrap sample they land in.}
+\label{fig:consensus}\end{figure}
+
+\input{tables/phase2_consensus.tex}
+
+\section{Comparative analysis and recommendation}
+\label{sec:comparison}
+
+\subsection{Algorithm-pair agreement}
+Figure~\ref{fig:agreement} and Table~\ref{tab:agreement} give the pairwise ARI
+between all four final labellings. Disagreement here is more informative than
+any single metric: two algorithms that agree are describing the same structure,
+while a low pair means at least one is imposing its own assumptions on the data.
+
+\begin{figure}[htbp]\centering
+\includegraphics[width=0.6\linewidth]{phase2_agreement.pdf}
+\caption{Pairwise ARI between the four families on shared rows.}
+\label{fig:agreement}\end{figure}
+
+\input{tables/phase2_agreement.tex}
+
+\subsection{Error analysis of the preferred clustering}
+The lowest-silhouette points of the preferred clustering are extracted and
+characterised (Table~\ref{tab:error-analysis}). The diagnostic question is
+whether they are noise, boundary cases, or a subcluster the algorithm missed;
+the fraud rate among the worst-fitting points versus the population rate
+discriminates between those explanations. Figure~\ref{fig:silhouette} shows the
+full per-point distribution rather than its mean, which is where boundary mass
+becomes visible.
+
+\input{tables/phase2_error_analysis.tex}
+
+\begin{figure}[htbp]\centering
+\includegraphics[width=0.8\linewidth]{phase2_silhouette.pdf}
+\caption{Per-point silhouette distribution for the preferred clustering,
+grouped by cluster.}
+\label{fig:silhouette}\end{figure}
+
+\subsection{Recommendation}
+The preferred clustering, its ranking against the alternatives, and the metric
+the choice rests on are recorded in \texttt{results/phase2/summary.json} under
+\texttt{preferred}. The recommendation follows the primary internal metric
+(silhouette) among the full-data runs, for one reason: with a
+\num{0.17}\%-positive label, external metrics cannot arbitrate between
+clusterings without turning an unsupervised task into a supervised one by the
+back door. Internal geometry decides the clustering; the label is then used to
+ask what the chosen clustering happens to reveal.
+
+\section{Limitations carried into Phase 3}
+\begin{itemize}
+  \item Ward's result is established on a subsample, not the full dataset. Its
+        cross-family comparison is sound, but it is not a full-data claim.
+  \item Whole-space clustering does not separate fraud, and the external metrics
+        say so plainly. Phase 3 therefore tests two responses: a learned
+        representation (deep clustering) and a within-cluster anomaly ranking
+        rather than cluster membership as the fraud signal.
+  \item The gap statistic's uniform reference is drawn from a bounding box that
+        DS-10's outliers stretch very wide, which biases it toward small $k$.
+        This is disclosed rather than corrected, and it is one reason the final
+        $k$ rests on a vote rather than on any single criterion.
+\end{itemize}
+
+\section*{Reproduction}
+\texttt{make phase2} (equivalently \texttt{dvc repro phase2}) after Phase 1.
+Outputs: \texttt{results/phase2/summary.json},
+\texttt{reports/tables/phase2\_*.tex}, \texttt{reports/figures/phase2\_*.pdf},
+and the preferred full-data labelling at
+\texttt{data/processed/phase2\_clusters.npy}.
+
+\end{document}

@@ -1,0 +1,16 @@
+\begin{table}[htbp]
+\centering
+\begin{tabular}{lrrr}
+\toprule
+method & recommended\_k & direction & score\_at\_recommended \\
+\midrule
+elbow & 7 & min & $4.548\times 10^{5}$ \\
+silhouette & 2 & max & 0.830 \\
+gap & 2 & max & 4.473 \\
+bic & 15 & min & $-7.889\times 10^{5}$ \\
+bootstrap & 15 & max & 0.422 \\
+\bottomrule
+\end{tabular}
+\caption{Determining $k$: five criteria on 20{,}000 stratified rows. Consensus $k=2$.}
+\label{tab:k-selection}
+\end{table}

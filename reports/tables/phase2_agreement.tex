@@ -1,0 +1,15 @@
+\begin{table}[htbp]
+\centering
+\begin{tabular}{lrrrr}
+\toprule
+ & kmeans(k=2) & ward(k=2) & gmm(k=2) & hdbscan(k=21) \\
+\midrule
+kmeans(k=2) & 1.000 & 0.952 & -0.004 & 0.065 \\
+ward(k=2) & 0.952 & 1.000 & -0.013 & 0.073 \\
+gmm(k=2) & -0.004 & -0.013 & 1.000 & -0.067 \\
+hdbscan(k=21) & 0.065 & 0.073 & -0.067 & 1.000 \\
+\bottomrule
+\end{tabular}
+\caption{Pairwise ARI between the four families on the shared subsample.}
+\label{tab:agreement}
+\end{table}

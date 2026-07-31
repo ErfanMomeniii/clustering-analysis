@@ -1,0 +1,15 @@
+\begin{table}[htbp]
+\centering
+\begin{tabular}{lrrrr}
+\toprule
+ & phase2:kmeans(k=2) & ae\_kmeans(k=2) & dec(k=2) & dec\_infonce(k=2) \\
+\midrule
+phase2:kmeans(k=2) & 1.000 & -0.053 & 0.040 & -0.037 \\
+ae\_kmeans(k=2) & -0.053 & 1.000 & 0.118 & 0.262 \\
+dec(k=2) & 0.040 & 0.118 & 1.000 & 0.320 \\
+dec\_infonce(k=2) & -0.037 & 0.262 & 0.320 & 1.000 \\
+\bottomrule
+\end{tabular}
+\caption{Pairwise ARI: does the deep track find the Phase 2 structure or a different one?}
+\label{tab:phase3-agreement}
+\end{table}

@@ -1,0 +1,15 @@
+\begin{table}[htbp]
+\centering
+\begin{tabular}{lrrrrrrrrrrrrr}
+\toprule
+algorithm & k\_requested & n\_clusters & n\_noise & runtime\_s & silhouette & davies\_bouldin & calinski\_harabasz & dunn & ari & nmi & ami & v\_measure & purity \\
+\midrule
+kmeans & 2 & 2 & 0 & 0.904 & 0.187 & 2.263 & 795.498 & 0.054 & 0.009 & 0.002 & 0.002 & 0.002 & 0.998 \\
+ward & 2 & 2 & 0 & 8.749 & 0.112 & 2.128 & 733.431 & 0.073 & -0.003 & $8.807\times 10^{-4}$ & $6.581\times 10^{-4}$ & $8.807\times 10^{-4}$ & 0.998 \\
+gmm & 2 & 2 & 0 & 3.700 & 0.137 & 6.405 & 373.776 & 0.017 & 0.003 & 0.003 & 0.003 & 0.003 & 0.998 \\
+hdbscan & 2 & 21 & 11{,}510 & 8.159 & 0.134 & 1.639 & 455.347 & 0.214 & -0.002 & $8.049\times 10^{-4}$ & $2.691\times 10^{-4}$ & $8.049\times 10^{-4}$ & 0.998 \\
+\bottomrule
+\end{tabular}
+\caption{All four families on one shared stratified subsample (20{,}000 rows, 33 fraud) at $k=2$.}
+\label{tab:portfolio-sub}
+\end{table}

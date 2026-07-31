@@ -1,0 +1,13 @@
+\begin{table}[htbp]
+\centering
+\begin{tabular}{lrr}
+\toprule
+model & average\_precision & roc\_auc \\
+\midrule
+global (clustering ignored) & 0.7949 & 0.9494 \\
+cluster-conditional & 0.6498 & 0.9250 \\
+\bottomrule
+\end{tabular}
+\caption{Cluster-conditional vs global modelling on a stratified holdout (12{,}000 rows).}
+\label{tab:downstream}
+\end{table}

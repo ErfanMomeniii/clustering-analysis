@@ -1,0 +1,14 @@
+\begin{table}[htbp]
+\centering
+\begin{tabular}{lrrrr}
+\toprule
+metric & linkage & n\_clusters & silhouette & ari\_vs\_reference \\
+\midrule
+euclidean & average & 2 & 0.882 & 1.000 \\
+manhattan & average & 2 & 0.882 & 1.000 \\
+cosine & average & 2 & 0.123 & $-3.758\times 10^{-4}$ \\
+\bottomrule
+\end{tabular}
+\caption{Average-linkage clustering under three distance metrics; ARI is measured against the Euclidean reference.}
+\label{tab:ablation}
+\end{table}

@@ -1,0 +1,21 @@
+\begin{table}[htbp]
+\centering
+\begin{tabular}{lrrr}
+\toprule
+cluster & support & precision & rule \\
+\midrule
+1 & 28{,}419 & 0.993 & V9 >  -1.0093 AND V16 >  -1.1852 AND V18 <= 1.7754 AND V2 >  -0.8136 \\
+0 & 2{,}662 & 0.965 & V9 <= -1.0093 AND V16 <= 0.2504 AND V2 <= 0.3000 AND V4 <= 0.7049 \\
+1 & 2{,}329 & 0.782 & V9 >  -1.0093 AND V16 >  -1.1852 AND V18 <= 1.7754 AND V2 <= -0.8136 \\
+1 & 1{,}478 & 0.937 & V9 >  -1.0093 AND V16 <= -1.1852 AND V18 <= 0.4267 AND V16 >  -2.2881 \\
+1 & 1{,}425 & 0.989 & V9 <= -1.0093 AND V16 >  0.2504 AND V4 >  -1.7448 AND V2 >  -0.6147 \\
+0 & 1{,}410 & 0.993 & V9 >  -1.0093 AND V16 <= -1.1852 AND V18 >  0.4267 AND V19 <= 1.5378 \\
+1 & 557 & 0.934 & V9 <= -1.0093 AND V16 <= 0.2504 AND V2 >  0.3000 AND V16 >  -1.3389 \\
+0 & 437 & 0.927 & V9 >  -1.0093 AND V16 >  -1.1852 AND V18 >  1.7754 AND V16 <= 0.0773 \\
+1 & 378 & 0.960 & V9 >  -1.0093 AND V16 >  -1.1852 AND V18 >  1.7754 AND V16 >  0.0773 \\
+1 & 232 & 0.603 & V9 <= -1.0093 AND V16 >  0.2504 AND V4 >  -1.7448 AND V2 <= -0.6147 \\
+\bottomrule
+\end{tabular}
+\caption{Surrogate decision-tree rules (fidelity 96.8\%), ten highest-support leaves.}
+\label{tab:rules}
+\end{table}

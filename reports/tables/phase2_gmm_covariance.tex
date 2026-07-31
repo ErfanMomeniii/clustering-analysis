@@ -1,0 +1,15 @@
+\begin{table}[htbp]
+\centering
+\begin{tabular}{lrrrrr}
+\toprule
+covariance\_type & mean\_log\_likelihood & bic & aic & n\_parameters & n\_iter \\
+\midrule
+full & -21.4 & $8.6\times 10^{5}$ & $8.6\times 10^{5}$ & 869 & 29 \\
+diag & -33.6 & $1.3\times 10^{6}$ & $1.3\times 10^{6}$ & 113 & 9 \\
+spherical & -36.3 & $1.5\times 10^{6}$ & $1.5\times 10^{6}$ & 59 & 13 \\
+tied & -39.7 & $1.6\times 10^{6}$ & $1.6\times 10^{6}$ & 463 & 4 \\
+\bottomrule
+\end{tabular}
+\caption{GMM covariance structures at the selected $k$, sorted by BIC.}
+\label{tab:gmm-cov}
+\end{table}

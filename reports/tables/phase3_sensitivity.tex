@@ -1,0 +1,13 @@
+\begin{table}[htbp]
+\centering
+\begin{tabular}{lrrr}
+\toprule
+variant & n\_clusters & ari\_vs\_reference & description \\
+\midrule
+pca\_space & 2 & 0.007 & PCA at 95\% variance instead of scaled features \\
+standard\_scaler & 2 & -0.053 & uniform standard scaling instead of the hybrid choice \\
+\bottomrule
+\end{tabular}
+\caption{Preprocessing sensitivity: ARI of a re-clustering under each variant against the preferred clustering.}
+\label{tab:sensitivity}
+\end{table}
