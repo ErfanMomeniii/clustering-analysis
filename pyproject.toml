@@ -9,16 +9,17 @@ description = "DS-10 Credit Card Fraud clustering analysis — Advanced Data Min
 requires-python = ">=3.11"
 readme = "README.md"
 license = {file = "LICENSE"}
+# Only packages the code actually imports. Unused declarations were removed
+# because they are a reproducibility liability, not free documentation:
+# scikit-learn-extra in particular fails to build against current scikit-learn,
+# so declaring it would break `pip install -e .` on a grader's machine for a
+# feature this project never used.
 dependencies = [
     "numpy>=1.26",
     "pandas>=2.2",
     "scikit-learn>=1.5",
-    "scikit-learn-extra>=0.3",
     "hdbscan>=0.8.38",
     "umap-learn>=0.5.6",
-    "gower>=0.1.2",
-    "kneed>=0.8",
-    "yellowbrick>=1.5",
     "matplotlib>=3.8",
     "seaborn>=0.13",
     "scipy>=1.13",
@@ -26,7 +27,6 @@ dependencies = [
     "pandera>=0.20",
     "pyyaml>=6",
     "joblib>=1.4",
-    "tqdm>=4.66",
 ]
 
 [project.optional-dependencies]
@@ -39,9 +39,18 @@ dev = [
     "pre-commit>=3.7",
     "jupyter>=1",
     "nbformat>=5.10",
+    "jupytext>=1.16",
 ]
 pipeline = [
     "dvc[s3]>=3.50",
+]
+deep = [
+    "torch>=2.9",
+    "shap>=0.45",
+    "dice_ml>=0.12",
+]
+app = [
+    "streamlit>=1.30",
 ]
 
 [tool.setuptools.packages.find]
@@ -63,3 +72,9 @@ target-version = ["py311"]
 testpaths = ["tests"]
 addopts = "-ra --strict-markers"
 markers = ["slow: marks tests as slow"]
+
+[tool.jupytext]
+# Pair every notebook with a percent-format script. Without this the `jupytext
+# --sync` pre-commit hook silently does nothing ("not a paired notebook"), which
+# is how the executed notebook and its re-runnable script drifted apart before.
+formats = "ipynb,py:percent"
