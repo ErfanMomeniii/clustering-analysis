@@ -1,5 +1,6 @@
 import pandas as pd
 import pytest
+from pandera.errors import SchemaError
 
 from clustering_analysis.clean import clean_frame, generate_decision_log
 
@@ -30,7 +31,7 @@ def test_clean_frame_no_dup_drop_when_disabled():
 
 def test_clean_frame_rejects_missing_columns():
     df = pd.DataFrame([{"V1": 0.0}])
-    with pytest.raises(Exception):
+    with pytest.raises(SchemaError):
         clean_frame(df, drop_duplicates=True)
 
 
