@@ -9,3 +9,12 @@ repos:
     hooks:
       - id: black
         language_version: python3.11
+  # Keep the executed .ipynb and the re-runnable .py script in lockstep: the
+  # .ipynb is the DVC dependency, so silent drift would make the pipeline
+  # reproduce something other than the committed script.
+  - repo: https://github.com/mwouts/jupytext
+    rev: v1.16.4
+    hooks:
+      - id: jupytext
+        args: [--sync, --pipe, black]
+        additional_dependencies: [black==24.8.0]
