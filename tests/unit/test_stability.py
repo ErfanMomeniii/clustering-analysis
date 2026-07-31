@@ -120,3 +120,35 @@ def test_co_association_matrix_preserves_small_input(blobs_k3):
         "kmeans", X, k=3, n_resamples=3, sample_fraction=0.8, seed=0, max_n=1000
     )
     assert M.shape == (200, 200)
+
+
+def test_co_association_counts_each_resample_once_despite_duplicate_draws():
+    """Bootstrap draws repeat indices; a pair must still count once per resample.
+
+    ``co[np.ix_(idx, idx)] += same`` looks like it would double-count a row drawn
+    twice, but NumPy's fancy-index assignment is last-write-wins rather than
+    accumulating, so each resample contributes exactly one increment. That is the
+    behaviour the "fraction of resamples" definition needs, and it is subtle
+    enough that a refactor to ``np.add.at`` would silently break it — hence this
+    test. Probabilities must stay within [0, 1].
+    """
+    rng = np.random.default_rng(0)
+    X = np.vstack([rng.normal(0, 0.1, (40, 2)), rng.normal(6, 0.1, (40, 2))])
+    M = co_association_matrix(
+        "kmeans", X, 2, n_resamples=10, sample_fraction=1.0, seed=0, max_n=80, n_init=3
+    )
+    assert M.min() >= 0.0
+    assert M.max() <= 1.0
+    np.testing.assert_allclose(np.diag(M), 1.0)
+    # well-separated blobs: within-blob pairs always co-cluster, across-blob never
+    assert M[:40, :40].mean() > 0.95
+    assert M[:40, 40:].mean() < 0.05
+
+
+def test_co_association_is_symmetric():
+    rng = np.random.default_rng(1)
+    X = np.vstack([rng.normal(0, 0.2, (30, 3)), rng.normal(5, 0.2, (30, 3))])
+    M = co_association_matrix(
+        "kmeans", X, 2, n_resamples=6, sample_fraction=0.8, seed=1, max_n=60, n_init=3
+    )
+    np.testing.assert_allclose(M, M.T)
