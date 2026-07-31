@@ -1,0 +1,29 @@
+{
+  "entries": [
+    {
+      "entry_id": "9fc97f4d312b",
+      "name": "phase3-preferred",
+      "algorithm": "ae_kmeans",
+      "k": 2,
+      "data_version": "76274b691b16",
+      "fit_date": "2026-07-31T14:14:49.203793+00:00",
+      "metrics": {
+        "silhouette": 0.16083474072490347,
+        "davies_bouldin": 3.463414083584688,
+        "calinski_harabasz": 1420.7714114669525,
+        "dunn": 0.029961206519926394,
+        "ari": 0.005662308622944921,
+        "nmi": 0.001970473458006227,
+        "ami": 0.0019100624075605534,
+        "v_measure": 0.001970473458006227,
+        "purity": 0.998325
+      },
+      "artifact_path": null,
+      "tags": [
+        "phase3",
+        "deep-clustering",
+        "track1"
+      ]
+    }
+  ]
+}

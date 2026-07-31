@@ -1,0 +1,43 @@
+{
+  "name": "phase3-preferred",
+  "algorithm": "ae_kmeans",
+  "k": 2,
+  "data_version": "76274b691b16",
+  "n_rows": 40000,
+  "n_features": 31,
+  "feature_space": "X_scaled",
+  "params": {
+    "latent_dim": 10,
+    "hidden_dims": [
+      64,
+      32
+    ],
+    "dec_epochs": 150,
+    "contrastive_weight": 0.1,
+    "temperature": 0.5
+  },
+  "metrics": {
+    "silhouette": 0.16083474072490347,
+    "davies_bouldin": 3.463414083584688,
+    "calinski_harabasz": 1420.7714114669525,
+    "dunn": 0.029961206519926394,
+    "ari": 0.005662308622944921,
+    "nmi": 0.001970473458006227,
+    "ami": 0.0019100624075605534,
+    "v_measure": 0.001970473458006227,
+    "purity": 0.998325
+  },
+  "seeds": {
+    "algorithms": 46,
+    "global": 42
+  },
+  "fit_date": "2026-07-31T14:14:49.203793+00:00",
+  "entry_id": "9fc97f4d312b",
+  "artifact_path": null,
+  "notes": "Phase 3 Track 1 winner; compared against Phase 2 kmeans on identical rows.",
+  "tags": [
+    "phase3",
+    "deep-clustering",
+    "track1"
+  ]
+}
