@@ -98,3 +98,40 @@ def test_algorithms_recover_blob_structure(blobs):
         assert len(np.unique(labels)) == 3
     labels = fit_hdbscan(X, k=0, seed=0, min_cluster_size=20, min_samples=5)
     assert len(set(labels) - {-1}) >= 2
+
+
+# --- Group D: covariance-structure comparison (brief §3.1.4) ---------------- #
+def test_compare_covariance_types_covers_all_four_structures():
+    from clustering_analysis.algorithms.gmm import COVARIANCE_TYPES, compare_covariance_types
+
+    X, _ = make_blobs(n_samples=300, centers=3, cluster_std=0.5, random_state=0, n_features=4)
+    rows = compare_covariance_types(X, 3, seed=0)
+    assert {r["covariance_type"] for r in rows} == set(COVARIANCE_TYPES)
+    assert len(rows) >= 3  # the brief requires at least three
+
+
+def test_compare_covariance_types_is_sorted_by_bic_ascending():
+    from clustering_analysis.algorithms.gmm import compare_covariance_types
+
+    X, _ = make_blobs(n_samples=300, centers=3, cluster_std=0.5, random_state=0, n_features=4)
+    bics = [r["bic"] for r in compare_covariance_types(X, 3, seed=0)]
+    assert bics == sorted(bics)
+
+
+def test_full_covariance_uses_the_most_parameters():
+    from clustering_analysis.algorithms.gmm import compare_covariance_types
+
+    X, _ = make_blobs(n_samples=300, centers=3, cluster_std=0.5, random_state=0, n_features=4)
+    by_type = {r["covariance_type"]: r for r in compare_covariance_types(X, 3, seed=0)}
+    assert by_type["full"]["n_parameters"] > by_type["diag"]["n_parameters"]
+    assert by_type["diag"]["n_parameters"] > by_type["spherical"]["n_parameters"]
+
+
+def test_covariance_comparison_reports_log_likelihood_and_convergence():
+    from clustering_analysis.algorithms.gmm import compare_covariance_types
+
+    X, _ = make_blobs(n_samples=300, centers=3, cluster_std=0.5, random_state=0, n_features=4)
+    for row in compare_covariance_types(X, 3, seed=0):
+        assert row["converged"] is True
+        assert row["n_iter"] >= 1
+        assert row["log_likelihood"] == pytest.approx(row["mean_log_likelihood"] * 300)
