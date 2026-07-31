@@ -22,7 +22,13 @@ def pca_explained_variance_curve(X: np.ndarray, *, max_components: int) -> np.nd
 
 
 def umap_embed(
-    X: np.ndarray, *, n_neighbors: int, min_dist: float, n_components: int, seed: int
+    X: np.ndarray,
+    *,
+    n_neighbors: int,
+    min_dist: float,
+    n_components: int,
+    seed: int,
+    metric: str = "euclidean",
 ) -> np.ndarray:
     import umap  # imported lazily — UMAP is heavy
 
@@ -30,7 +36,7 @@ def umap_embed(
         n_neighbors=n_neighbors,
         min_dist=min_dist,
         n_components=n_components,
-        metric="euclidean",
+        metric=metric,
         random_state=seed,
     )
     return reducer.fit_transform(X)

@@ -105,7 +105,8 @@ print(f"Retained {n_pc} components for {PARAMS.reduce.pca_variance:.0%} variance
 
 # %%
 emb2 = umap_embed(X_scaled, n_neighbors=PARAMS.reduce.umap.n_neighbors, min_dist=PARAMS.reduce.umap.min_dist,
-                  n_components=PARAMS.reduce.umap.n_components_viz, seed=PARAMS.seeds.reduce)
+                  n_components=PARAMS.reduce.umap.n_components_viz, seed=PARAMS.seeds.reduce,
+                  metric=PARAMS.reduce.umap.metric)
 fig, ax = plt.subplots(figsize=(8, 7))
 hb = ax.hexbin(emb2[:, 0], emb2[:, 1], gridsize=60, mincnt=1, cmap="viridis")
 fig.colorbar(hb, label="count")
