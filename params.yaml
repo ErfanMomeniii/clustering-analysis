@@ -30,7 +30,6 @@ reduce:
     n_neighbors: 30
     min_dist: 0.05
     n_components_viz: 2
-    n_components_downstream: 10
     metric: euclidean
 
 tendency:
@@ -75,3 +74,68 @@ stability:
   seed_offset: 7000
   consensus:
     co_occurrence_threshold: 0.5   # link probability for consensus graph
+
+phase2:
+  input_matrix: X_pca              # one of: X_scaled, X_pca — clustering feature space
+  # K-Means / GMM / HDBSCAN scale to all 283,726 rows. Ward does not: a full
+  # pairwise distance matrix is 283,726² * 8 B ~ 322 GB. Group B therefore runs
+  # on a stratified subsample, and the two regimes are reported side by side
+  # rather than silently mixed into one table.
+  full_algorithms: [kmeans, gmm, hdbscan]
+  portfolio_n: 20000               # stratified rows where all four families are feasible
+  k_selection_n: 20000             # rows for the k-selection sweep
+  ablation_n: 5000                 # rows for the distance-metric ablation
+  consensus_n: 2000                # rows for the co-association matrix
+  error_analysis:
+    n_worst: 200                   # lowest-silhouette points to characterise
+    sample_size: 20000             # subsample for per-point silhouette
+  primary_metric: silhouette       # metric that decides the preferred clustering
+
+phase3:
+  input_matrix: X_scaled           # deep models learn their own representation
+  train_n: 40000                   # rows for autoencoder / DEC training
+  eval_n: 40000                    # rows scored for the track comparison
+  downstream:
+    test_fraction: 0.3             # holdout for cluster-conditional modelling
+  sensitivity:
+    alt_scaler: standard           # preprocessing variant for the ARI-drift audit
+  drift:
+    n_bins: 10                     # quantile bins for PSI
+    psi_threshold: 0.2             # documented re-fit trigger
+    split_fraction: 0.5            # early/late split of the Time axis
+
+deep:
+  autoencoder:
+    latent_dim: 10
+    hidden_dims: [64, 32]
+    epochs: 100
+    batch_size: 256
+    lr: 0.001
+  ae_kmeans:
+    epochs: 50                     # fine-tune epochs for AE+K-Means joint stage
+  dec:
+    init_epochs: 100               # pre-train AE before DEC init
+    dec_epochs: 150                # DEC fine-tune epochs
+    update_interval: 5             # recompute target distribution every N epochs
+    tol: 0.001                     # convergence: delta label proportion
+    gamma: 1.0                     # KL weight on DEC loss
+  dec_infonce:
+    contrastive_weight: 0.1        # lambda for InfoNCE auxiliary loss
+    temperature: 0.5               # InfoNCE softmax temperature
+    n_negatives: 1024              # negative samples per anchor
+
+interpretation:
+  tree_max_depth: 4                # decision-tree surrogate depth for rule extraction
+  tree_min_samples_leaf: 50
+  shap_background: 200             # k-means background samples for SHAP explainer
+  dice_features: ["V14", "V4", "V12", "V10", "Amount"]  # mutable features for counterfactuals
+
+significance:
+  n_bootstrap: 1000                # bootstrap resamples for CIs
+  ci_level: 0.95                   # confidence interval level
+  n_permutations: 1000             # permutations for significance tests
+  permutation_seed: 9001
+
+dashboard:
+  port: 8501
+  sample_size: 10000               # subsample for UMAP scatter in dashboard
